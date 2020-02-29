@@ -7,6 +7,13 @@ All unit tests pass, none have been disabled nor have any been removed from the 
 
 Some future code has been introduced to ensure solution continuity. Currently the code uses Kafka 2.x client, which appears to be fully backwards compatible to Kafka 1.x.
 
+### Known limitations
+Hive 1.2.1 has no commitInsertTable MetaHook feature. This means that only optimistic commit semantics are supported for EXACTLY_ONCE writes to Kafka in this backport. Therefore `hive.kafka.optimistic.commit` has been enabled by default.
+
+Disabling optimistic commit semantics is not recommended, as records will be written to the Kafka topic, but 2PC will never be effected and the records will not be readable within a `read_committed` scope. "Optimistic commit" commits all succesfully written records within the scope of a given task upon completion of the task. Thus, if 5 tasks are required to complete the Hive query, each task will commit a part of the dataset upon completion, and there will therefore be 5 commits to Kafka. Should a task fail for some reason, the transaction for the given task will be aborted, and the task may be retried, or it may be failed along with the job. Thus, if a task is failed, it may be possible that a part of the dataset of the given query is written to kafka, but not all of it.
+
+This scenario, if not defended against, could lead to a partial/inconsistent state in Kafka, which may not be acceptable. In that case merge semantics could be used when pushing back records to Kafka, or deduplication logic could be used by the consumer in order to eliminate any duplicate records.
+
 ### Demo Usage Script
 ```sh
 # build the backported hive-kafka storage handler

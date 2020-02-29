@@ -207,14 +207,16 @@
                            <shadeTestJar>true</shadeTestJar>
                            <createDependencyReducedPom>false</createDependencyReducedPom>
                            <artifactSet>
-                              <includes>
+			      <includes>
+			         <include>com.esotericsoftware:minlog</include>
+			         <include>com.esotericsoftware:kryo-shaded</include>
 				 <include>org.apache.kafka:kafka-clients</include>
 				 <include>com.fasterxml.jackson.core:jackson-databind</include>
 				 <include>com.fasterxml.jackson.core:jackson-core</include>
 				 <include>com.fasterxml.jackson.core:jackson-annotations</include>
                               </includes>
                            </artifactSet>
-                           <relocations>
+			   <relocations>
                               <relocation>
                                  <pattern>org.apache.kafka</pattern>
                                  <shadedPattern>org.apache.kafkaesque</shadedPattern>

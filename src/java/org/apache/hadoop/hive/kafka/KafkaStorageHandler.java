@@ -387,7 +387,7 @@ import java.util.function.Predicate;
   }
 
   @Override public void commitCreateTable(Table table) throws MetaException {
-    commitInsertTable(table, false);
+    //commitInsertTable(table, false);
   }
 
   @Override public void preDropTable(Table table) throws MetaException {
