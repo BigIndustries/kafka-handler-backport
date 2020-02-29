@@ -14,7 +14,7 @@ Some future code has been introduced to ensure solution continuity. Currently th
 # language feature tests have been set to @Ignore
 git clone https://github.com/BigIndustries/kafka-handler-backport.git
 cd kafka-handler-backport
-mvn clean test package assembly:single
+mvn clean test package
 
 docker pull hrushikesh198/hive:1.0.0
 docker pull michaeldqin/kafka
@@ -27,7 +27,7 @@ docker run -d -v ~/work:/root/work --name hive_cont1 --link kafka hrushikesh198/
 
 # wait for services up
 # docker logs -f hive_cont1
-sudo cp target/kafka-handler-backport-1.0-SNAPSHOT-jar-with-dependencies.jar ~/work
+sudo cp target/kafka-handler-backport-1.0-SNAPSHOT.jar ~/work
 
 docker run --rm -it --name producer --link kafka michaeldqin/kafka \
     kafka-topics.sh --create --zookeeper kafka:2181 --topic test-topic \
@@ -36,11 +36,11 @@ docker run --rm -it --name producer --link kafka michaeldqin/kafka \
 docker exec -it hive_cont1 'bash'
 yum install -y java-1.8.0-openjdk-headless #yep, j1.7 by default
 hadoop fs -mkdir -p /usr/local/hive/lib/
-hadoop fs -put /root/work/kafka-handler-backport-1.0-SNAPSHOT-jar-with-dependencies.jar /usr/local/hive/lib/
+hadoop fs -put /root/work/kafka-handler-backport-1.0-SNAPSHOT.jar /usr/local/hive/lib/
 echo "hi" > /tmp/file.csv
 hadoop fs -mkdir /tmp/testdata
 hadoop fs -put /tmp/file.csv /tmp/testdata
-cp /root/work/kafka-handler-backport-1.0-SNAPSHOT-jar-with-dependencies.jar /usr/local/hive/lib/
+cp /root/work/kafka-handler-backport-1.0-SNAPSHOT.jar /usr/local/hive/lib/
 unlink /usr/java/default/bin/java
 ln -s /usr/bin/java /usr/java/default/bin/java
 kill -9 $(ps aux | grep HiveServer2 | awk '{print $2}')
@@ -58,9 +58,30 @@ CREATE EXTERNAL TABLE test_data (hello_world STRING) STORED AS TEXTFILE LOCATION
 
 # following DDL query may throw an error about missing transaction_states directory - this error
 # can safely be ignored, the directory IS generated when writing data to Kafka.
-CREATE EXTERNAL TABLE kafka_table2 (hello_world STRING, block_offset_in_file BIGINT, row_offset_in_block BIGINT) STORED BY 'org.apache.hadoop.hive.kafka.KafkaStorageHandler' TBLPROPERTIES ('kafka.topic' = 'test-topic2','kafka.bootstrap.servers' = 'kafka:9092', "kafka.serde.class" = "org.apache.hadoop.hive.serde2.avro.AvroSerDe", "kafka.write.semantic"="EXACTLY_ONCE");
-INSERT INTO kafka_table2 SELECT hello_world, BLOCK__OFFSET__INSIDE__FILE, ROW__OFFSET__INSIDE__BLOCK, null, null, -1, -1 FROM test_data;
-SELECT * FROM kafka_table2 order by block_offset_in_file, row_offset_in_block;
+CREATE EXTERNAL TABLE kafka_table2 (
+hello_world STRING,
+block_offset_in_file BIGINT,
+input_filename STRING
+) 
+STORED BY 'org.apache.hadoop.hive.kafka.KafkaStorageHandler'
+TBLPROPERTIES (
+'kafka.topic'='test-topic2',
+'kafka.bootstrap.servers'='kafka:9092',
+'kafka.serde.class'='org.apache.hadoop.hive.serde2.avro.AvroSerDe',
+'kafka.write.semantic'='EXACTLY_ONCE'
+);
+
+INSERT INTO kafka_table2 
+SELECT hello_world, 
+BLOCK__OFFSET__INSIDE__FILE, 
+INPUT__FILE__NAME, 
+null, 
+null, 
+-1, 
+-1 
+FROM test_data;
+
+SELECT * FROM kafka_table2 order by input_filename, block_offset_in_file;
 ```
 
 ------

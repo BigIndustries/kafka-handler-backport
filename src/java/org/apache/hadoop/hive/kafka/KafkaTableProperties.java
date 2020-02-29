@@ -53,7 +53,8 @@ enum KafkaTableProperties {
   /**
    * Table property that indicates if we should commit within the task or delay it to the Metadata Hook Commit call.
    */
-  HIVE_KAFKA_OPTIMISTIC_COMMIT("hive.kafka.optimistic.commit", "false");
+  // NB. Hook Commit call (writer.close(false)) is never called by Hive 1.2.1.
+  HIVE_KAFKA_OPTIMISTIC_COMMIT("hive.kafka.optimistic.commit", "true");
 
   /**
    * Kafka storage handler table properties constructor.
