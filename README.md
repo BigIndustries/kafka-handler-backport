@@ -13,7 +13,7 @@ Some future code has been introduced to ensure solution continuity. Currently th
 # all enabled unit tests should pass...some future
 # language feature tests have been set to @Ignore
 git clone https://github.com/BigIndustries/kafka-handler-backport.git
-cd hive-kafka-backport
+cd kafka-handler-backport
 mvn clean test package assembly:single
 
 docker pull hrushikesh198/hive:1.0.0
@@ -27,7 +27,7 @@ docker run -d -v ~/work:/root/work --name hive_cont1 --link kafka hrushikesh198/
 
 # wait for services up
 # docker logs -f hive_cont1
-sudo cp target/hive-kafka-backport-1.0-SNAPSHOT-jar-with-dependencies.jar ~/work
+sudo cp target/kafka-handler-backport-1.0-SNAPSHOT-jar-with-dependencies.jar ~/work
 
 docker run --rm -it --name producer --link kafka michaeldqin/kafka \
     kafka-topics.sh --create --zookeeper kafka:2181 --topic test-topic \
@@ -36,11 +36,11 @@ docker run --rm -it --name producer --link kafka michaeldqin/kafka \
 docker exec -it hive_cont1 'bash'
 yum install -y java-1.8.0-openjdk-headless #yep, j1.7 by default
 hadoop fs -mkdir -p /usr/local/hive/lib/
-hadoop fs -put /root/work/hive-kafka-backport-1.0-SNAPSHOT-jar-with-dependencies.jar /usr/local/hive/lib/
+hadoop fs -put /root/work/kafka-handler-backport-1.0-SNAPSHOT-jar-with-dependencies.jar /usr/local/hive/lib/
 echo "hi" > /tmp/file.csv
 hadoop fs -mkdir /tmp/testdata
 hadoop fs -put /tmp/file.csv /tmp/testdata
-cp /root/work/hive-kafka-backport-1.0-SNAPSHOT-jar-with-dependencies.jar /usr/local/hive/lib/
+cp /root/work/kafka-handler-backport-1.0-SNAPSHOT-jar-with-dependencies.jar /usr/local/hive/lib/
 unlink /usr/java/default/bin/java
 ln -s /usr/bin/java /usr/java/default/bin/java
 kill -9 $(ps aux | grep HiveServer2 | awk '{print $2}')
