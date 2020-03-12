@@ -49,6 +49,9 @@ hadoop fs -put /tmp/file.csv /tmp/testdata
 cp /root/work/kafka-handler-backport-1.0-SNAPSHOT.jar /usr/local/hive/lib/
 unlink /usr/java/default/bin/java
 ln -s /usr/bin/java /usr/java/default/bin/java
+kill -9 $(ps aux | grep HiveServer2 | awk '{print $2}')
+/usr/local/hive/bin/hiveserver2 &
+
 beeline
 !connect jdbc:hive2://localhost:10000/default
 admin
@@ -89,6 +92,7 @@ null,
 FROM test_data;
 
 SELECT * FROM kafka_table2 order by input_filename, block_offset_in_file;
+!quit
 ```
 
 ------
