@@ -18,7 +18,7 @@
   -->
 <project xmlns="http://maven.apache.org/POM/4.0.0" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/xsd/maven-4.0.0.xsd">
    <groupId>org.apache.hive</groupId>
-   <version>1.0-SNAPSHOT</version>
+   <version>1.0.0</version>
    <modelVersion>4.0.0</modelVersion>
    <properties>
       <mockito-core.version>1.10.19</mockito-core.version>
@@ -32,6 +32,13 @@
    <artifactId>kafka-handler-backport</artifactId>
    <packaging>jar</packaging>
    <name>Hive Kafka Storage Handler</name>
+   <distributionManagement>
+      <repository>
+         <id>github</id>
+         <name>GitHub BigIndustries Apache Maven Packages</name>
+         <url>https://maven.pkg.github.com/BigIndustries/kafka-handler-backport</url>
+      </repository>
+   </distributionManagement>
    <dependencies>
       <dependency>
          <groupId>com.google.guava</groupId>
