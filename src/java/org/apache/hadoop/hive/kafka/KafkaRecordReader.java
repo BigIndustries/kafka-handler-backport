@@ -61,7 +61,13 @@ import java.util.Properties;
       String brokerString = properties.getProperty(CommonClientConfigs.BOOTSTRAP_SERVERS_CONFIG);
       Preconditions.checkNotNull(brokerString, "broker end point can not be null");
       LOG.info("Starting Consumer with Kafka broker string [{}]", brokerString);
+
+      // avoid classloader confusion
+      Thread currentThread = Thread.currentThread();
+      ClassLoader savedClassLoader = currentThread.getContextClassLoader();
+      currentThread.setContextClassLoader(null);
       consumer = new KafkaConsumer<>(properties);
+      currentThread.setContextClassLoader(savedClassLoader);
     }
   }
 

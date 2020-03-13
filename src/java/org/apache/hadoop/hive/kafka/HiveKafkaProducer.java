@@ -63,7 +63,13 @@ class HiveKafkaProducer<K, V> implements Producer<K, V> {
 
   HiveKafkaProducer(Properties properties) {
     transactionalId = properties.getProperty(ProducerConfig.TRANSACTIONAL_ID_CONFIG);
+
+    // avoid classloader confusion
+    Thread currentThread = Thread.currentThread();
+    ClassLoader savedClassLoader = currentThread.getContextClassLoader();
+    currentThread.setContextClassLoader(null);
     kafkaProducer = new KafkaProducer<>(properties);
+    currentThread.setContextClassLoader(savedClassLoader);
   }
 
   @Override public void initTransactions() {
