@@ -42,8 +42,7 @@ docker run --rm -it --name producer --link kafka michaeldqin/kafka \
 
 docker exec -it hive_cont1 'bash'
 yum install -y java-1.8.0-openjdk-headless #yep, j1.7 by default
-hadoop fs -mkdir -p /usr/local/hive/lib/
-hadoop fs -put /root/work/kafka-handler-backport-1.0-SNAPSHOT.jar /usr/local/hive/lib/
+hadoop fs -put /root/work/kafka-handler-backport-1.0-SNAPSHOT.jar /tmp/
 echo "hi" > /tmp/file.csv
 hadoop fs -mkdir /tmp/testdata
 hadoop fs -put /tmp/file.csv /tmp/testdata
@@ -51,7 +50,13 @@ cp /root/work/kafka-handler-backport-1.0-SNAPSHOT.jar /usr/local/hive/lib/
 unlink /usr/java/default/bin/java
 ln -s /usr/bin/java /usr/java/default/bin/java
 kill -9 $(ps aux | grep HiveServer2 | awk '{print $2}')
-hive
+/usr/local/hive/bin/hiveserver2 &
+
+beeline
+!connect jdbc:hive2://localhost:10000/default
+admin
+admin
+ADD JAR hdfs:///tmp/kafka-handler-backport-1.0-SNAPSHOT.jar;
 CREATE EXTERNAL TABLE kafka_table (hello_world STRING) STORED BY 'org.apache.hadoop.hive.kafka.KafkaStorageHandler' TBLPROPERTIES ('kafka.topic' = 'test-topic','kafka.bootstrap.servers' = 'kafka:9092');
 INSERT INTO TABLE kafka_table VALUES('hi', null, null, -1, -1);
 SELECT * FROM kafka_table;
@@ -63,8 +68,6 @@ SELECT * FROM kafka_table;
 CREATE EXTERNAL TABLE test_data (hello_world STRING) STORED AS TEXTFILE LOCATION
 'hdfs:///tmp/testdata/';
 
-# following DDL query may throw an error about missing transaction_states directory - this error
-# can safely be ignored, the directory IS generated when writing data to Kafka.
 CREATE EXTERNAL TABLE kafka_table2 (
 hello_world STRING,
 block_offset_in_file BIGINT,
@@ -89,6 +92,7 @@ null,
 FROM test_data;
 
 SELECT * FROM kafka_table2 order by input_filename, block_offset_in_file;
+!quit
 ```
 
 ------
