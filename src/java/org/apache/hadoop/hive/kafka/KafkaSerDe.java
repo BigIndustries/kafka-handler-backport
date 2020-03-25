@@ -36,7 +36,7 @@ import org.apache.hadoop.hive.serde2.SerDeException;
 import org.apache.hadoop.hive.serde2.SerDeSpec;
 import org.apache.hadoop.hive.serde2.SerDeStats;
 import org.apache.hadoop.hive.serde2.avro.AvroGenericRecordWritable;
-import org.apache.hadoop.hive.serde2.avro.AvroSerdeUtils;
+import org.apache.hadoop.hive.serde2.avro.AvroSerdeUtils2;
 import org.apache.hadoop.hive.serde2.objectinspector.ObjectInspector;
 import org.apache.hadoop.hive.serde2.objectinspector.ObjectInspectorFactory;
 import org.apache.hadoop.hive.serde2.objectinspector.StructField;
@@ -130,9 +130,9 @@ import java.util.stream.Collectors;
     if (delegateSerDe.getSerializedClass() == Text.class) {
       bytesConverter = new TextBytesConverter();
     } else if (delegateSerDe.getSerializedClass() == AvroGenericRecordWritable.class) {
-      String schemaFromProperty = tbl.getProperty(AvroSerdeUtils.AvroTableProperties.SCHEMA_LITERAL.getPropName(), "");
+      String schemaFromProperty = tbl.getProperty(AvroSerdeUtils2.AvroTableProperties.SCHEMA_LITERAL.getPropName(), "");
       Preconditions.checkArgument(!schemaFromProperty.isEmpty(), "Avro Schema is empty Can not go further");
-      Schema schema = AvroSerdeUtils.getSchemaFor(schemaFromProperty);
+      Schema schema = AvroSerdeUtils2.getSchemaFor(schemaFromProperty);
       LOG.debug("Building Avro Reader with schema {}", schemaFromProperty);
       //bytesConverter = new AvroBytesConverter(schema);
       bytesConverter = getByteConverterForAvroDelegate(schema, tbl);
@@ -155,13 +155,13 @@ import java.util.stream.Collectors;
   }
 
   BytesConverter getByteConverterForAvroDelegate(Schema schema, Properties tbl) throws SerDeException {
-    String avroBytesConverterPropertyName = AvroSerdeUtils.AvroTableProperties.AVRO_SERDE_TYPE.getPropName();
+    String avroBytesConverterPropertyName = AvroSerdeUtils2.AvroTableProperties.AVRO_SERDE_TYPE.getPropName();
     String avroBytesConverterProperty = tbl.getProperty(avroBytesConverterPropertyName,
         BytesConverterType.NONE.toString());
     BytesConverterType avroByteConverterType = BytesConverterType.fromString(avroBytesConverterProperty);
     switch (avroByteConverterType) {
     case SKIP:
-      String avroSkipBytesPropertyName = AvroSerdeUtils.AvroTableProperties.AVRO_SERDE_SKIP_BYTES.getPropName();
+      String avroSkipBytesPropertyName = AvroSerdeUtils2.AvroTableProperties.AVRO_SERDE_SKIP_BYTES.getPropName();
       Integer avroSkipBytes = 0;
       try {
         avroSkipBytes = Integer.parseInt(tbl.getProperty(avroSkipBytesPropertyName));

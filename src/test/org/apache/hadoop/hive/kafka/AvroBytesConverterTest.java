@@ -27,7 +27,7 @@ import io.confluent.kafka.serializers.KafkaAvroSerializer;
 import org.apache.avro.Schema;
 
 import org.apache.hadoop.hive.serde2.avro.AvroGenericRecordWritable;
-import org.apache.hadoop.hive.serde2.avro.AvroSerdeUtils;
+import org.apache.hadoop.hive.serde2.avro.AvroSerdeUtils2;
 import org.apache.hadoop.hive.serde2.SerDeException;
 
 import org.junit.Assert;
@@ -90,7 +90,7 @@ public class AvroBytesConverterTest {
     byte[] simpleRecordWithNoOffset = Arrays.copyOfRange(simpleRecordConfluentBytes, 5, recordLength);
 
     Properties tbl = new Properties();
-    tbl.setProperty(AvroSerdeUtils.AvroTableProperties.AVRO_SERDE_TYPE.getPropName(), "NONE");
+    tbl.setProperty(AvroSerdeUtils2.AvroTableProperties.AVRO_SERDE_TYPE.getPropName(), "NONE");
 
     runConversionTest(tbl, simpleRecordWithNoOffset);
   }
@@ -103,8 +103,8 @@ public class AvroBytesConverterTest {
     Integer offset = 5;
 
     Properties tbl = new Properties();
-    tbl.setProperty(AvroSerdeUtils.AvroTableProperties.AVRO_SERDE_TYPE.getPropName(), "SKIP");
-    tbl.setProperty(AvroSerdeUtils.AvroTableProperties.AVRO_SERDE_SKIP_BYTES.getPropName(), offset.toString());
+    tbl.setProperty(AvroSerdeUtils2.AvroTableProperties.AVRO_SERDE_TYPE.getPropName(), "SKIP");
+    tbl.setProperty(AvroSerdeUtils2.AvroTableProperties.AVRO_SERDE_SKIP_BYTES.getPropName(), offset.toString());
 
     runConversionTest(tbl, simpleRecordConfluentBytes);
   }
@@ -121,8 +121,8 @@ public class AvroBytesConverterTest {
     byte[] simpleRecordAsOffsetBytes = Arrays.copyOfRange(simpleRecordConfluentBytes, 5 - offset, recordLength);
 
     Properties tbl = new Properties();
-    tbl.setProperty(AvroSerdeUtils.AvroTableProperties.AVRO_SERDE_TYPE.getPropName(), "SKIP");
-    tbl.setProperty(AvroSerdeUtils.AvroTableProperties.AVRO_SERDE_SKIP_BYTES.getPropName(), offset.toString());
+    tbl.setProperty(AvroSerdeUtils2.AvroTableProperties.AVRO_SERDE_TYPE.getPropName(), "SKIP");
+    tbl.setProperty(AvroSerdeUtils2.AvroTableProperties.AVRO_SERDE_SKIP_BYTES.getPropName(), offset.toString());
 
     runConversionTest(tbl, simpleRecordAsOffsetBytes);
   }
@@ -138,8 +138,8 @@ public class AvroBytesConverterTest {
     Integer offset = 190;
 
     Properties tbl = new Properties();
-    tbl.setProperty(AvroSerdeUtils.AvroTableProperties.AVRO_SERDE_TYPE.getPropName(), "SKIP");
-    tbl.setProperty(AvroSerdeUtils.AvroTableProperties.AVRO_SERDE_SKIP_BYTES.getPropName(), offset.toString());
+    tbl.setProperty(AvroSerdeUtils2.AvroTableProperties.AVRO_SERDE_TYPE.getPropName(), "SKIP");
+    tbl.setProperty(AvroSerdeUtils2.AvroTableProperties.AVRO_SERDE_SKIP_BYTES.getPropName(), offset.toString());
 
     exception.expect(RuntimeException.class);
     exception.expectMessage("org.apache.hadoop.hive.serde2.SerDeException: " +

@@ -53,8 +53,8 @@ import java.util.Properties;
  * Utilities useful only to the AvroSerde itself.  Not mean to be used by
  * end-users but public for interop to the ql package.
  */
-public class AvroSerdeUtils {
-  private static final Logger LOG = LoggerFactory.getLogger(AvroSerdeUtils.class);
+public class AvroSerdeUtils2 {
+  private static final Logger LOG = LoggerFactory.getLogger(AvroSerdeUtils2.class);
 
   /**
    * Enum container for all avro table properties.
@@ -111,7 +111,7 @@ public class AvroSerdeUtils {
           throws IOException, AvroSerdeException {
     String schemaString = properties.getProperty(AvroTableProperties.SCHEMA_LITERAL.getPropName());
     if(schemaString != null && !schemaString.equals(SCHEMA_NONE))
-      return AvroSerdeUtils.getSchemaFor(schemaString);
+      return AvroSerdeUtils2.getSchemaFor(schemaString);
 
     // Try pulling directly from URL
     schemaString = properties.getProperty(AvroTableProperties.SCHEMA_URL.getPropName());
@@ -142,7 +142,7 @@ public class AvroSerdeUtils {
       Schema s = getSchemaFromFS(schemaString, conf);
       if (s == null) {
         //in case schema is not a file system
-        return AvroSerdeUtils.getSchemaFor(new URL(schemaString));
+        return AvroSerdeUtils2.getSchemaFor(new URL(schemaString));
       }
       return s;
     } catch (IOException ioe) {
@@ -170,7 +170,7 @@ public class AvroSerdeUtils {
     }
     try {
       in = fs.open(new Path(schemaFSUrl));
-      Schema s = AvroSerdeUtils.getSchemaFor(in);
+      Schema s = AvroSerdeUtils2.getSchemaFor(in);
       return s;
     } finally {
       if(in != null) in.close();
@@ -264,7 +264,7 @@ public class AvroSerdeUtils {
     // NOTE: Previously, we did OldHiveDecimal.setScale(scale), called OldHiveDecimal
     //       unscaledValue().toByteArray().
     dec = dec.setScale(scale);
-    return AvroSerdeUtils.getBufferFromBytes(dec.unscaledValue().toByteArray());
+    return AvroSerdeUtils2.getBufferFromBytes(dec.unscaledValue().toByteArray());
   }
 
   public static byte[] getBytesFromByteBuffer(ByteBuffer byteBuffer) {
