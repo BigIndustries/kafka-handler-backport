@@ -45,7 +45,7 @@
          <groupId>org.apache.avro</groupId>
 	 <artifactId>avro</artifactId>
 	 <version>${avro.version}</version>
-      </dependency>	   
+      </dependency>
       <dependency>
          <groupId>com.google.guava</groupId>
          <artifactId>guava</artifactId>
@@ -203,7 +203,7 @@
        <dependency>
          <groupId>io.confluent</groupId>
          <artifactId>kafka-avro-serializer</artifactId>
-         <version>5.4.0</version>
+         <version>5.4.1</version>
          <scope>test</scope>
          <exclusions>
            <exclusion>
@@ -212,6 +212,16 @@
            </exclusion>
          </exclusions>
        </dependency>
+       <dependency>
+         <groupId>io.confluent</groupId>
+         <artifactId>kafka-streams-avro-serde</artifactId>
+         <version>5.4.1</version>
+ </dependency>
+<dependency>
+    <groupId>io.confluent</groupId>
+    <artifactId>kafka-schema-registry-client</artifactId>
+    <version>5.4.1</version>
+</dependency>
    </dependencies>
    <repositories>
        <repository>
