@@ -18,7 +18,7 @@
   -->
 <project xmlns="http://maven.apache.org/POM/4.0.0" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/xsd/maven-4.0.0.xsd">
    <groupId>org.apache.hive</groupId>
-   <version>1.0.1</version>
+   <version>1.0.2</version>
    <modelVersion>4.0.0</modelVersion>
    <properties>
       <avro.version>1.8.2</avro.version>
@@ -186,7 +186,7 @@
       <dependency>
          <groupId>com.fasterxml.jackson.core</groupId>
          <artifactId>jackson-databind</artifactId>
-         <version>2.10.1</version>
+         <version>2.10.3</version>
          <exclusions>
             <exclusion>
                <groupId>com.google.guava</groupId>
@@ -204,7 +204,6 @@
          <groupId>io.confluent</groupId>
          <artifactId>kafka-avro-serializer</artifactId>
          <version>5.4.1</version>
-         <scope>test</scope>
          <exclusions>
            <exclusion>
              <groupId>org.apache.avro</groupId>
@@ -216,12 +215,12 @@
          <groupId>io.confluent</groupId>
          <artifactId>kafka-streams-avro-serde</artifactId>
          <version>5.4.1</version>
- </dependency>
-<dependency>
-    <groupId>io.confluent</groupId>
-    <artifactId>kafka-schema-registry-client</artifactId>
-    <version>5.4.1</version>
-</dependency>
+       </dependency>
+       <dependency>
+	       <groupId>io.confluent</groupId>
+	       <artifactId>kafka-schema-registry-client</artifactId>
+	       <version>5.4.1</version>
+       </dependency>
    </dependencies>
    <repositories>
        <repository>
@@ -273,6 +272,13 @@
 				 <include>com.fasterxml.jackson.core:jackson-databind</include>
 				 <include>com.fasterxml.jackson.core:jackson-core</include>
 				 <include>com.fasterxml.jackson.core:jackson-annotations</include>
+				 <include>io.confluent:kafka-streams-avro-serde</include>
+				 <include>io.confluent:kafka-schema-registry-client</include>
+				 <include>io.confluent:kafka-avro-serializer</include>
+				 <include>io.confluent:common-config</include>
+				 <include>io.confluent:common-utils</include>
+				 <include>org.apache.avro:avro</include>
+				 <include>org.apache.hive:hive-serde</include>
                               </includes>
                            </artifactSet>
 			   <relocations>
@@ -283,7 +289,23 @@
 			      <relocation>
 				 <pattern>com.fasterxml.jackson.core</pattern>
 				 <shadedPattern>com.fasterxml.jackson.cores</shadedPattern>
-			      </relocation>
+			 </relocation>
+			       <relocation>
+				       <pattern>com.fasterxml.jackson.databind</pattern>
+				       <shadedPattern>com.fasterxml.jackson.databound</shadedPattern>
+			       </relocation>
+			       <relocation>]
+				       <pattern>com.fasterxml.jackson.annotation</pattern>
+				       <shadedPattern>com.fasterxml.jackson.anyestation</shadedPattern>
+			       </relocation>
+			       <relocation>
+				       <pattern>org.apache.avro</pattern>
+				       <shadedPattern>org.apache.shade.avro</shadedPattern>
+			       </relocation>
+			       <relocation>
+				       <pattern>org.apache.hadoop.hive.serde2.avro</pattern>
+				       <shadedPattern>shaded.org.apache.hadoop.hive.serde2.avro</shadedPattern>
+			       </relocation>
                            </relocations>
                            <filters>
                               <filter>
