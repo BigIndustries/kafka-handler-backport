@@ -18,6 +18,9 @@
 
 package org.apache.hadoop.hive.kafka;
 
+import io.confluent.kafka.schemaregistry.client.CachedSchemaRegistryClient;
+import io.confluent.kafka.schemaregistry.client.rest.exceptions.RestClientException;
+
 import com.google.common.base.Preconditions;
 import com.google.common.base.Throwables;
 import org.apache.avro.Schema;
@@ -59,6 +62,9 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.Properties;
 import java.util.stream.Collectors;
+
+import java.util.Map;
+import java.util.HashMap;
 
 /**
  * Generic Kafka Serde that allow user to delegate Serde to other class like Avro,
@@ -131,11 +137,24 @@ import java.util.stream.Collectors;
       bytesConverter = new TextBytesConverter();
     } else if (delegateSerDe.getSerializedClass() == AvroGenericRecordWritable.class) {
       String schemaFromProperty = tbl.getProperty(AvroSerdeUtils2.AvroTableProperties.SCHEMA_LITERAL.getPropName(), "");
-      Preconditions.checkArgument(!schemaFromProperty.isEmpty(), "Avro Schema is empty Can not go further");
-      Schema schema = AvroSerdeUtils2.getSchemaFor(schemaFromProperty);
-      LOG.debug("Building Avro Reader with schema {}", schemaFromProperty);
-      //bytesConverter = new AvroBytesConverter(schema);
-      bytesConverter = getByteConverterForAvroDelegate(schema, tbl);
+      if(schemaFromProperty.isEmpty()) {
+        try {
+	  Map<String, String> map = new HashMap<>();
+          for (final String name : tbl.stringPropertyNames()) {
+            map.put(name, tbl.getProperty(name));
+          }
+          CachedSchemaRegistryClient schemaRegistry = new CachedSchemaRegistryClient(
+            tbl.getProperty("schema.registry.url"), 100, map);
+          Schema schema = schemaRegistry.getBySubjectAndId(tbl.getProperty("schema.subject"), Integer.parseInt(tbl.getProperty("schema.id")));
+          bytesConverter = getByteConverterForAvroDelegate(schema, tbl);
+	} catch(RestClientException | IOException e) { throw new SerDeException("problem with schema registry"); }
+      } else {
+         //Preconditions.checkArgument(!schemaFromProperty.isEmpty(), "Avro Schema is empty Can not go further");
+         Schema schema = AvroSerdeUtils2.getSchemaFor(schemaFromProperty);
+         LOG.debug("Building Avro Reader with schema {}", schemaFromProperty);
+         //bytesConverter = new AvroBytesConverter(schema);
+         bytesConverter = getByteConverterForAvroDelegate(schema, tbl);
+      }
     } else {
       bytesConverter = new BytesWritableConverter();
     }

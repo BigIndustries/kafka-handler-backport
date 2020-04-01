@@ -14,6 +14,12 @@ Disabling optimistic commit semantics is not recommended, as records will be wri
 
 This scenario, if not defended against, could lead to a partial/inconsistent state in Kafka, which may not be acceptable. In that case merge semantics could be used when pushing back records to Kafka, or deduplication logic could be used by the consumer in order to eliminate any duplicate records.
 
+### Extra features
+
+This backport adds functionality to support Confluent Schema Registry. To use Schema Registry, you need to add some extra properties to the table definition. See description of properties below. You also need to use the provided org.apache.hadoop.hive.kafka.ConfluentAvroSerde SerDe.
+
+This functionality is a work in progress, currently reading from Kafka with Schema Registry is known to work.
+
 ### Demo Usage Script
 ```sh
 # build the backported hive-kafka storage handler
@@ -157,6 +163,7 @@ List of supported serializers and deserializers:
 |org.apache.hadoop.hive.serde2.avro.AvroSerDe|
 |org.apache.hadoop.hive.serde2.lazybinary.LazyBinarySerDe|
 |org.apache.hadoop.hive.serde2.lazy.LazySimpleSerDe|
+|org.apache.hadoop.hive.kafka.ConfluentAvroSerde|
 
 #### Table Definitions 
 In addition to the user defined column schema, this handler will append additional columns allowing
@@ -319,7 +326,37 @@ GROUP BY
 | hive.kafka.max.retries              | Number of retries for Kafka metadata fetch operations.                                                                             | No        | 6                                       |
 | hive.kafka.metadata.poll.timeout.ms | Number of milliseconds before consumer timeout on fetching Kafka metadata.                                                         | No        | 30000 (30 Seconds)                      |
 | kafka.write.semantic                | Writer semantics, allowed values (AT_LEAST_ONCE, EXACTLY_ONCE)                                                         | No        | AT_LEAST_ONCE                           |
+| avro.serde.type			| Set to 'SKIP' if using Confluent Schema Registry schemas 								| No		| null						|
+| avro.serde.skip.bytes			| Number of bytes to skip from beginning of schema. For Confluent Schema Registry this should be set to 5		| No		| null						|
+| schema.subject			| The subject name of the schema in Confluent Schema Registry.								| No		| null						|
+| schema.id				| The ID of the schema in Confluent Schema Registry.									| No		| null						|
 
+## Schema Registry
+
+To use Confluent Schema Registry, you will also need to provide configuration for that:
+
+```sql
+CREATE EXTERNAL TABLE mytable (
+zzz STRING
+)
+stored by 'org.apache.hadoop.hive.kafka.KafkaStorageHandler'
+TBLPROPERTIES (
+'kafka.serde.class'='org.apache.hadoop.hive.kafka.ConfluentAvroSerde',
+'schema.registry.url'='https://myhost:port',
+'schema.registry.ssl.truststore.location'='/path/on/all/slaves/store.jks',
+'schema.registry.ssl.truststore.password'='password',
+'schema.registry.ssl.keystore.location'='/path/on/all/slaves/keys.jks',
+'schema.registry.ssl.keystore.password'='password',
+'schema.registry.ssl.key.password'='password',
+'schema.registry.ssl.truststore.type'='JKS',
+'schema.registry.ssl.keystore.type'='JKS',
+'avro.serde.type'='SKIP',
+'avro.serde.skip.bytes'='5',
+'schema.subject'='your-schema-name',
+'schema.id'='12345'
+...
+);
+```
 
 ### Setting Extra Consumer/Producer properties.
 The user can inject custom Kafka consumer/producer properties via the table properties.
