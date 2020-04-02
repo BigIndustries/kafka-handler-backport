@@ -31,6 +31,8 @@ import io.confluent.kafka.schemaregistry.client.CachedSchemaRegistryClient;
 import org.apache.hadoop.hive.serde2.SerDeUtils;
 import org.apache.hadoop.hive.serde.serdeConstants;
 import org.apache.hadoop.hive.serde2.avro.AvroGenericRecordWritable;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 public class ConfluentAvroSerde extends AbstractSerDe {
 
@@ -39,12 +41,14 @@ public class ConfluentAvroSerde extends AbstractSerDe {
   private String topic;
   private Schema schema;
   private AvroDeserializer deser = null;
+  private AvroSerializer ser = null;
   private List<String> columnNames;
   private List<TypeInfo> columnTypes;
 
   private static final String LIST_COLUMN_COMMENTS = "columns.comments";
   private static final String TABLE_NAME = "name";
   private static final String TABLE_COMMENT = "comment";
+  private static final Logger LOG = LoggerFactory.getLogger(ConfluentAvroSerde.class);
 
   @Override
   public void initialize(Configuration configuration, Properties tableProperties,
@@ -84,6 +88,7 @@ public class ConfluentAvroSerde extends AbstractSerDe {
     }
 
     deser = new AvroDeserializer(configuration);
+    ser = new AvroSerializer();
 
     try {
       CachedSchemaRegistryClient schemaRegistry = new CachedSchemaRegistryClient(
@@ -138,9 +143,11 @@ public class ConfluentAvroSerde extends AbstractSerDe {
 
   @Override
   public Writable serialize(Object o, ObjectInspector objectInspector) throws SerDeException {
-       AvroGenericRecordWritable w = new 
-	       KafkaSerDe.AvroBytesConverter(schema).getWritable(inner.serializer().serialize(topic, null, createGenericRecordFrom(o)));
-       return w;
+	  try {
+          return new BytesWritable(inner.serializer().serialize(topic, null, ((AvroGenericRecordWritable)ser.serialize(o, objectInspector, columnNames, columnTypes, schema)).getRecord()));
+	  } catch(org.apache.hadoop.hive.serde2.avro.AvroSerdeException e) {
+		  throw new SerDeException(e);
+	  }
   }
 
   @Override
@@ -159,8 +166,8 @@ public class ConfluentAvroSerde extends AbstractSerDe {
     return null;
   }
 
-  private static GenericRecord createGenericRecordFrom(Object object) {
-    final Schema schema = ReflectData.get().getSchema(object.getClass());
+  private GenericRecord createGenericRecordFrom(Object object) {
+    //final Schema schema = ReflectData.get().getSchema(object.getClass());
     final GenericData.Record record = new GenericData.Record(schema);
     Arrays.stream(object.getClass().getDeclaredFields()).forEach(field -> {
       try {

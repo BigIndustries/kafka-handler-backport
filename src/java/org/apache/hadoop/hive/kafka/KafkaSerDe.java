@@ -240,10 +240,19 @@ import java.util.HashMap;
             -1 :
             PrimitiveObjectInspectorUtils.getInt(partition, MetadataColumn.PARTITION.getObjectInspector());
 
+    Writable w = delegateSerDe.serialize(row, delegateSerializerOI);
+
+    if(w instanceof BytesWritable) {
+	    return new KafkaWritable(recordPartition,
+			    recordTs,
+			    ((BytesWritable)w).getBytes(),
+			    keyBytes);
+    }
+
     //noinspection unchecked
     return new KafkaWritable(recordPartition,
         recordTs,
-        bytesConverter.getBytes(delegateSerDe.serialize(row, delegateSerializerOI)),
+        bytesConverter.getBytes(w),
         keyBytes);
   }
 
