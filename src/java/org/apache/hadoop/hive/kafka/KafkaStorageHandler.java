@@ -125,6 +125,44 @@ import java.util.function.Predicate;
         .equals(KafkaOutputFormat.WriteSemantic.EXACTLY_ONCE.name())) {
       jobProperties.put("kafka.consumer.isolation.level", "read_committed");
     }
+
+    // add password files support
+    String consumerKeystorePWFile = tableDesc.getProperties().getProperty("kafka.consumer.ssl.keystore.password.file");
+    String consumerKeyPWFile = tableDesc.getProperties().getProperty("kafka.consumer.ssl.key.password.file");
+    String consumerTruststorePWFile = tableDesc.getProperties().getProperty("kafka.consumer.ssl.truststore.password.file");
+    String schemaRegistryKeystorePWFile = tableDesc.getProperties().getProperty("schema.registry.ssl.keystore.password.file");
+    String schemaRegistryKeyPWFile = tableDesc.getProperties().getProperty("schema.registry.ssl.key.password.file");
+    String schemaRegistryTruststorePWFile = tableDesc.getProperties().getProperty("schema.registry.ssl.truststore.password.file");
+
+    if(consumerKeyPWFile != null) {
+      jobProperties.put("kafka.consumer.ssl.key.password", readFileContent(consumerKeyPWFile));
+    }
+    if(consumerKeystorePWFile != null) {
+      jobProperties.put("kafka.consumer.ssl.keystore.password", readFileContent(consumerKeystorePWFile));
+    }
+    if(consumerTruststorePWFile != null) {
+      jobProperties.put("kafka.consumer.ssl.truststore.password", readFileContent(consumerTruststorePWFile));
+    }
+
+    if(schemaRegistryKeyPWFile != null) {
+      jobProperties.put("schema.registry.ssl.key.password", readFileContent(schemaRegistryKeyPWFile));
+    }
+    if(schemaRegistryKeystorePWFile != null) {
+      jobProperties.put("schema.registry.ssl.keystore.password", readFileContent(schemaRegistryKeystorePWFile));
+    }
+    if(schemaRegistryTruststorePWFile != null) {
+      jobProperties.put("schema.registry.ssl.truststore.password", readFileContent(schemaRegistryTruststorePWFile));
+    }
+  }
+
+  private String readFileContent(String filePath) {
+    String content = "";
+    try {
+      content = new String(Files.readAllBytes(Paths.get(filePath)));
+    } catch(IOException e) {
+      LOG.warn("Invalid file path while reading password file: " + filePath);
+    }
+    return content;
   }
 
  /* @Override public void configureInputJobCredentials(TableDesc tableDesc, Map<String, String> secrets) {

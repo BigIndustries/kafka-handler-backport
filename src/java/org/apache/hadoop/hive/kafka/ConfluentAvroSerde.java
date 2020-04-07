@@ -137,7 +137,7 @@ public class ConfluentAvroSerde extends AbstractSerDe {
   }
 
   @Override public Object deserialize(Writable writable) throws SerDeException {
-    return avroDeserializer.deserialize(null, null, writable, schema);
+    return avroDeserializer.deserialize(columnNames, columnTypes, writable, schema);
   }
 
   @Override public ObjectInspector getObjectInspector() throws SerDeException {

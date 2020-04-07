@@ -36,6 +36,8 @@ import org.slf4j.LoggerFactory;
 
 import javax.annotation.Nullable;
 import java.io.IOException;
+import java.nio.file.Files;
+import java.nio.file.Paths;
 import java.util.Properties;
 import java.util.UUID;
 import java.util.concurrent.TimeUnit;
@@ -75,6 +77,7 @@ class SimpleKafkaWriter implements FileSinkOperator.RecordWriter, RecordWriter<B
   SimpleKafkaWriter(String topic, @Nullable String writerId, Properties properties) {
     this.writerId = writerId == null ? UUID.randomUUID().toString() : writerId;
     this.topic = Preconditions.checkNotNull(topic, "Topic can not be null");
+
     Preconditions.checkState(properties.getProperty(ProducerConfig.BOOTSTRAP_SERVERS_CONFIG) != null,
         "set [" + ProducerConfig.BOOTSTRAP_SERVERS_CONFIG + "] property");
     producer = new KafkaProducer<>(properties, new ByteArraySerializer(), new ByteArraySerializer());
@@ -163,5 +166,4 @@ class SimpleKafkaWriter implements FileSinkOperator.RecordWriter, RecordWriter<B
       throw new IOException(sendExceptionRef.get());
     }
   }
-
 }

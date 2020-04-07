@@ -34,10 +34,11 @@ Additionally, we have added functionality for reading Java Keystore passwords fr
 | `schema.registry.ssl.key.password.file` |
 | `schema.registry.ssl.truststore.password.file` |
 
-To use these properties, you should create hidden files on the hosts as follows:
+To use these properties, you should create hidden files on the cluster hosts as follows:
 
 ```
 mkdir -p /etc/myproject/keystores
+chown hive:root /etc/myproject/keystores
 chmod 500 /etc/myproject/keystores
 echo "secretpassword" > /etc/myproject/keystores/.consumer-keystore.pass
 chown hive:root /etc/myproject/keystores/.consumer-keystore.pass

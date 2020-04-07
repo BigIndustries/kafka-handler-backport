@@ -47,6 +47,8 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import java.io.IOException;
+import java.nio.file.Files;
+import java.nio.file.Paths;
 import java.util.Arrays;
 import java.util.HashSet;
 import java.util.Map;
@@ -105,6 +107,34 @@ final class KafkaUtils {
           "Kafka Broker End Point is missing Please set Config " + KafkaTableProperties.HIVE_KAFKA_BOOTSTRAP_SERVERS
               .getName());
     }
+
+    // add password files support
+    final String consumerKeystorePWFile = configuration.get("kafka.consumer.ssl.keystore.password.file");
+    final String consumerKeyPWFile = configuration.get("kafka.consumer.ssl.key.password.file");
+    final String consumerTruststorePWFile = configuration.get("kafka.consumer.ssl.truststore.password.file");
+    final String schemaRegistryKeystorePWFile = configuration.get("schema.registry.ssl.keystore.password.file");
+    final String schemaRegistryKeyPWFile = configuration.get("schema.registry.ssl.key.password.file");
+    final String schemaRegistryTruststorePWFile = configuration.get("schema.registry.ssl.truststore.password.file");
+
+    if(consumerKeyPWFile != null) {
+      props.setProperty("kafka.consumer.ssl.key.password", readFileContent(consumerKeyPWFile));
+    }
+    if(consumerKeystorePWFile != null) {
+      props.setProperty("kafka.consumer.ssl.keystore.password", readFileContent(consumerKeystorePWFile));
+    }
+    if(consumerTruststorePWFile != null) {
+      props.setProperty("kafka.consumer.ssl.truststore.password", readFileContent(consumerTruststorePWFile));
+    }
+    if(schemaRegistryKeyPWFile != null) {
+      props.setProperty("schema.registry.ssl.key.password", readFileContent(schemaRegistryKeyPWFile));
+    }
+    if(schemaRegistryKeystorePWFile != null) {
+      props.setProperty("schema.registry.ssl.keystore.password", readFileContent(schemaRegistryKeystorePWFile));
+    }
+    if(schemaRegistryTruststorePWFile != null) {
+      props.setProperty("schema.registry.ssl.truststore.password", readFileContent(schemaRegistryTruststorePWFile));
+    }
+
     props.setProperty(CommonClientConfigs.BOOTSTRAP_SERVERS_CONFIG, brokerEndPoint);
     props.setProperty(ConsumerConfig.KEY_DESERIALIZER_CLASS_CONFIG, ByteArrayDeserializer.class.getName());
     props.setProperty(ConsumerConfig.VALUE_DESERIALIZER_CLASS_CONFIG, ByteArrayDeserializer.class.getName());
@@ -131,6 +161,7 @@ final class KafkaUtils {
   }
 
   static Properties producerProperties(Configuration configuration) {
+
     final String writeSemanticValue = configuration.get(KafkaTableProperties.WRITE_SEMANTIC_PROPERTY.getName());
     final KafkaOutputFormat.WriteSemantic writeSemantic = KafkaOutputFormat.WriteSemantic.valueOf(writeSemanticValue);
     final Properties properties = new Properties();
@@ -144,6 +175,32 @@ final class KafkaUtils {
     //case Kerberos is On
     if (UserGroupInformation.isSecurityEnabled()) {
       addKerberosJaasConf(configuration, properties);
+    }
+
+    final String producerKeystorePWFile = configuration.get("kafka.producer.ssl.keystore.password.file");
+    final String producerKeyPWFile = configuration.get("kafka.producer.ssl.key.password.file");
+    final String producerTruststorePWFile = configuration.get("kafka.producer.ssl.truststore.password.file");
+    final String schemaRegistryKeystorePWFile = configuration.get("schema.registry.ssl.keystore.password.file");
+    final String schemaRegistryKeyPWFile = configuration.get("schema.registry.ssl.key.password.file");
+    final String schemaRegistryTruststorePWFile = configuration.get("schema.registry.ssl.truststore.password.file");
+
+    if(schemaRegistryKeyPWFile != null) {
+      properties.put("schema.registry.ssl.key.password", readFileContent(schemaRegistryKeyPWFile));
+    }
+    if(schemaRegistryKeystorePWFile != null) {
+      properties.setProperty("schema.registry.ssl.keystore.password", readFileContent(schemaRegistryKeystorePWFile));
+    }
+    if(schemaRegistryTruststorePWFile != null) {
+      properties.setProperty("schema.registry.ssl.truststore.password", readFileContent(schemaRegistryTruststorePWFile));
+    }
+    if(producerKeyPWFile != null) {
+      properties.setProperty("ssl.key.password", readFileContent(producerKeyPWFile));
+    }
+    if(producerKeystorePWFile != null) {
+      properties.setProperty("ssl.keystore.password", readFileContent(producerKeystorePWFile));
+    }
+    if(producerTruststorePWFile != null) {
+      properties.setProperty("ssl.truststore.password", readFileContent(producerTruststorePWFile));
     }
 
     // user can always override stuff
@@ -310,4 +367,13 @@ final class KafkaUtils {
     log.info("Kafka client running with following JAAS = [{}]", jaasConf);
   }
 
+  private static String readFileContent(String filePath) {
+    String content = "";
+    try {
+      content = new String(Files.readAllBytes(Paths.get(filePath)));
+    } catch(IOException e) {
+      ;
+    }
+    return content;
+  }
 }

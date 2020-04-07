@@ -104,34 +104,10 @@ import java.util.HashMap;
   @Override public void initialize(@Nullable Configuration conf, Properties tbl) throws SerDeException {
 
     // add password files support
-    String consumerKeystorePWFile = tbl.getProperty("kafka.consumer.ssl.keystore.password.file");
-    String consumerKeyPWFile = tbl.getProperty("kafka.consumer.ssl.key.password.file");
-    String consumerTruststorePWFile = tbl.getProperty("kafka.consumer.ssl.truststore.password.file");
-    String producerKeystorePWFile = tbl.getProperty("kafka.producer.ssl.keystore.password.file");
-    String producerKeyPWFile = tbl.getProperty("kafka.producer.ssl.key.password.file");
-    String producerTruststorePWFile = tbl.getProperty("kafka.producer.ssl.truststore.password.file");
     String schemaRegistryKeystorePWFile = tbl.getProperty("schema.registry.ssl.keystore.password.file");
     String schemaRegistryKeyPWFile = tbl.getProperty("schema.registry.ssl.key.password.file");
     String schemaRegistryTruststorePWFile = tbl.getProperty("schema.registry.ssl.truststore.password.file");
 
-    if(consumerKeyPWFile != null) {
-      tbl.put("kafka.consumer.ssl.key.password", readFileContent(consumerKeyPWFile));
-    }
-    if(consumerKeystorePWFile != null) {
-      tbl.put("kafka.consumer.ssl.keystore.password", readFileContent(consumerKeystorePWFile));
-    }
-    if(consumerTruststorePWFile != null) {
-      tbl.put("kafka.consumer.ssl.truststore.password", readFileContent(consumerTruststorePWFile));
-    }
-    if(producerKeyPWFile != null) {
-      tbl.put("kafka.producer.ssl.key.password", readFileContent(producerKeyPWFile));
-    }
-    if(producerKeystorePWFile != null) {
-      tbl.put("kafka.producer.ssl.keystore.password", readFileContent(producerKeystorePWFile));
-    }
-    if(producerTruststorePWFile != null) {
-      tbl.put("kafka.producer.ssl.truststore.password", readFileContent(producerTruststorePWFile));
-    }
     if(schemaRegistryKeyPWFile != null) {
       tbl.put("schema.registry.ssl.key.password", readFileContent(schemaRegistryKeyPWFile));
     }
