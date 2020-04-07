@@ -117,13 +117,13 @@ final class KafkaUtils {
     final String schemaRegistryTruststorePWFile = configuration.get("schema.registry.ssl.truststore.password.file");
 
     if(consumerKeyPWFile != null) {
-      props.setProperty("kafka.consumer.ssl.key.password", readFileContent(consumerKeyPWFile));
+      props.setProperty("ssl.key.password", readFileContent(consumerKeyPWFile));
     }
     if(consumerKeystorePWFile != null) {
-      props.setProperty("kafka.consumer.ssl.keystore.password", readFileContent(consumerKeystorePWFile));
+      props.setProperty("ssl.keystore.password", readFileContent(consumerKeystorePWFile));
     }
     if(consumerTruststorePWFile != null) {
-      props.setProperty("kafka.consumer.ssl.truststore.password", readFileContent(consumerTruststorePWFile));
+      props.setProperty("ssl.truststore.password", readFileContent(consumerTruststorePWFile));
     }
     if(schemaRegistryKeyPWFile != null) {
       props.setProperty("schema.registry.ssl.key.password", readFileContent(schemaRegistryKeyPWFile));
