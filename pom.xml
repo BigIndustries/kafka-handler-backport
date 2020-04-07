@@ -27,7 +27,7 @@
         <kryo.version>4.0.2</kryo.version>
         <kafka.version>2.3.0</kafka.version>
         <maven.shade.plugin.version>3.2.0</maven.shade.plugin.version>
-        <hive.version>1.2.1</hive.version>
+        <hive.version>3.1.2</hive.version>
         <hadoop.version>2.7.3</hadoop.version>
         <maven.jar.plugin.version>2.4</maven.jar.plugin.version>
     </properties>
