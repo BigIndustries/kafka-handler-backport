@@ -20,6 +20,30 @@ This backport adds functionality to support Confluent Schema Registry. To use Sc
 
 Both reading from and writing to Kafka with Schema Registry are known to work.
 
+Additionally, we have added functionality for reading Java Keystore passwords from files instead of from string literals. The following properties have been added:
+
+| Property Name |
+| ----- |
+| `kafka.consumer.ssl.keystore.password.file` |
+| `kafka.consumer.ssl.key.password.file` |
+| `kafka.consumer.ssl.truststore.password.file` |
+| `kafka.producer.ssl.keystore.password.file` |
+| `kafka.producer.ssl.key.password.file` |
+| `kafka.producer.ssl.truststore.password.file` |
+| `schema.registry.ssl.keystore.password.file` |
+| `schema.registry.ssl.key.password.file` |
+| `schema.registry.ssl.truststore.password.file` |
+
+To use these properties, you should create hidden files on the hosts as follows:
+
+```
+mkdir -p /etc/myproject/keystores
+chmod 500 /etc/myproject/keystores
+echo "secretpassword" > /etc/myproject/keystores/.consumer-keystore.pass
+chown hive:root /etc/myproject/keystores/.consumer-keystore.pass
+chmod 400 /etc/myproject/keystores/.consumer-keystore.pass
+```
+
 ### Demo Usage Script
 ```sh
 # build the backported hive-kafka storage handler
