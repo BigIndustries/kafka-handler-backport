@@ -57,6 +57,8 @@ import java.io.ByteArrayOutputStream;
 import java.io.IOException;
 import java.nio.charset.CharacterCodingException;
 import java.nio.charset.Charset;
+import java.nio.file.Files;
+import java.nio.file.Paths;
 import java.rmi.server.UID;
 import java.util.ArrayList;
 import java.util.List;
@@ -100,6 +102,46 @@ import java.util.HashMap;
   private int metadataStartIndex;
 
   @Override public void initialize(@Nullable Configuration conf, Properties tbl) throws SerDeException {
+
+    // add password files support
+    String consumerKeystorePWFile = tbl.getProperty("kafka.consumer.ssl.keystore.password.file");
+    String consumerKeyPWFile = tbl.getProperty("kafka.consumer.ssl.key.password.file");
+    String consumerTruststorePWFile = tbl.getProperty("kafka.consumer.ssl.truststore.password.file");
+    String producerKeystorePWFile = tbl.getProperty("kafka.producer.ssl.keystore.password.file");
+    String producerKeyPWFile = tbl.getProperty("kafka.producer.ssl.key.password.file");
+    String producerTruststorePWFile = tbl.getProperty("kafka.producer.ssl.truststore.password.file");
+    String schemaRegistryKeystorePWFile = tbl.getProperty("schema.registry.ssl.keystore.password.file");
+    String schemaRegistryKeyPWFile = tbl.getProperty("schema.registry.ssl.key.password.file");
+    String schemaRegistryTruststorePWFile = tbl.getProperty("schema.registry.ssl.truststore.password.file");
+
+    if(consumerKeyPWFile != null) {
+      tbl.put("kafka.consumer.ssl.key.password", readFileContent(consumerKeyPWFile));
+    }
+    if(consumerKeystorePWFile != null) {
+      tbl.put("kafka.consumer.ssl.keystore.password", readFileContent(consumerKeystorePWFile));
+    }
+    if(consumerTruststorePWFile != null) {
+      tbl.put("kafka.consumer.ssl.truststore.password", readFileContent(consumerTruststorePWFile));
+    }
+    if(producerKeyPWFile != null) {
+      tbl.put("kafka.producer.ssl.key.password", readFileContent(producerKeyPWFile));
+    }
+    if(producerKeystorePWFile != null) {
+      tbl.put("kafka.producer.ssl.keystore.password", readFileContent(producerKeystorePWFile));
+    }
+    if(producerTruststorePWFile != null) {
+      tbl.put("kafka.producer.ssl.truststore.password", readFileContent(producerTruststorePWFile));
+    }
+    if(schemaRegistryKeyPWFile != null) {
+      tbl.put("schema.registry.ssl.key.password", readFileContent(schemaRegistryKeyPWFile));
+    }
+    if(schemaRegistryKeystorePWFile != null) {
+      tbl.put("schema.registry.ssl.keystore.password", readFileContent(schemaRegistryKeystorePWFile));
+    }
+    if(schemaRegistryTruststorePWFile != null) {
+      tbl.put("schema.registry.ssl.truststore.password", readFileContent(schemaRegistryTruststorePWFile));
+    }
+
     //This method is called before {@link org.apache.hadoop.hive.kafka.KafkaStorageHandler.preCreateTable}
     //Thus we need to default to org.apache.hadoop.hive.kafka.KafkaUtils.DEFAULT_PROPERTIES if any property is needed
     final String className = tbl.getProperty(KafkaTableProperties.SERDE_CLASS_NAME.getName(),
@@ -471,4 +513,13 @@ import java.util.HashMap;
     }
   }
 
+  private String readFileContent(String filePath) {
+    String content = "";
+    try {
+      content = new String(Files.readAllBytes(Paths.get(filePath)));
+    } catch(IOException e) {
+      LOG.warn("Invalid file path while reading password file: " + filePath);
+    }
+    return content;
+  }
 }
