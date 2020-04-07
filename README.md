@@ -16,7 +16,7 @@ This scenario, if not defended against, could lead to a partial/inconsistent sta
 
 ### Extra features
 
-This backport adds functionality to support Confluent Schema Registry. To use Schema Registry, you need to add some extra properties to the table definition. See description of properties below. You also need to use the provided org.apache.hadoop.hive.kafka.ConfluentAvroSerde SerDe.
+This backport adds functionality to support Confluent Schema Registry. To use Schema Registry, you need to add some extra properties to the table definition. See description of properties below. You also need to use the provided `org.apache.hadoop.hive.kafka.ConfluentAvroSerde` SerDe.
 
 Both reading from and writing to Kafka with Schema Registry are known to work.
 

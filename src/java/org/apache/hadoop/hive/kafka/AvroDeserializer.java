@@ -100,7 +100,8 @@ class AvroDeserializer {
 
   private Configuration configuration = null;
 
-  AvroDeserializer() {}
+  AvroDeserializer() {
+  }
 
   AvroDeserializer(Configuration configuration) {
     this.configuration = configuration;
@@ -126,8 +127,7 @@ class AvroDeserializer {
       gdr = new GenericDatumReader<GenericRecord>(writer, reader);
     }
 
-    public GenericRecord reencode(GenericRecord r)
-        throws AvroSerdeException {
+    public GenericRecord reencode(GenericRecord r) throws AvroSerdeException {
       baos.reset();
 
       BinaryEncoder be = EncoderFactory.get().directBinaryEncoder(baos, null);
@@ -163,13 +163,13 @@ class AvroDeserializer {
    * @return A list of objects suitable for Hive to work with further
    * @throws AvroSerdeException For any exception during deseriliazation
    */
-  public Object deserialize(List<String> columnNames, List<TypeInfo> columnTypes,
-                            Writable writable, Schema readerSchema) throws AvroSerdeException {
-    if(!(writable instanceof AvroGenericRecordWritable)) {
+  public Object deserialize(List<String> columnNames, List<TypeInfo> columnTypes, Writable writable,
+      Schema readerSchema) throws AvroSerdeException {
+    if (!(writable instanceof AvroGenericRecordWritable)) {
       throw new AvroSerdeException("Expecting a AvroGenericRecordWritable");
     }
 
-    if(row == null || row.size() != columnNames.size()) {
+    if (row == null || row.size() != columnNames.size()) {
       row = new ArrayList<Object>(columnNames.size());
     } else {
       row.clear();
@@ -184,24 +184,24 @@ class AvroDeserializer {
     UID recordReaderId = recordWritable.getRecordReaderID();
     //If the record reader (from which the record is originated) is already seen and valid,
     //no need to re-encode the record.
-    if(!noEncodingNeeded.contains(recordReaderId)) {
+    if (!noEncodingNeeded.contains(recordReaderId)) {
       SchemaReEncoder reEncoder = null;
       //Check if the record record is already encoded once. If it does
       //reuse the encoder.
-      if(reEncoderCache.containsKey(recordReaderId)) {
+      if (reEncoderCache.containsKey(recordReaderId)) {
         reEncoder = reEncoderCache.get(recordReaderId); //Reuse the re-encoder
       } else if (!r.getSchema().equals(readerSchema)) { //Evolved schema?
         //Create and store new encoder in the map for re-use
         reEncoder = new SchemaReEncoder(r.getSchema(), readerSchema);
         reEncoderCache.put(recordReaderId, reEncoder);
-      } else{
-        LOG.debug("Adding new valid RRID :" +  recordReaderId);
+      } else {
+        LOG.debug("Adding new valid RRID :" + recordReaderId);
         noEncodingNeeded.add(recordReaderId);
       }
-      if(reEncoder != null) {
+      if (reEncoder != null) {
         if (!warnedOnce) {
-          LOG.warn("Received different schemas.  Have to re-encode: " +
-              r.getSchema().toString(false) + "\nSIZE" + reEncoderCache + " ID " + recordReaderId);
+          LOG.warn("Received different schemas.  Have to re-encode: " + r.getSchema().toString(false) + "\nSIZE"
+              + reEncoderCache + " ID " + recordReaderId);
           warnedOnce = true;
         }
         r = reEncoder.reencode(r);
@@ -214,14 +214,15 @@ class AvroDeserializer {
 
   // The actual deserialization may involve nested records, which require recursion.
   private List<Object> workerBase(List<Object> objectRow, Schema fileSchema, List<String> columnNames,
-                                  List<TypeInfo> columnTypes, GenericRecord record)
-          throws AvroSerdeException {
-    for(int i = 0; i < columnNames.size(); i++) {
+      List<TypeInfo> columnTypes, GenericRecord record) throws AvroSerdeException {
+    for (int i = 0; i < columnNames.size(); i++) {
       TypeInfo columnType = columnTypes.get(i);
       String columnName = columnNames.get(i);
       Object datum = record.get(columnName);
       Schema datumSchema = record.getSchema().getField(columnName).schema();
-      Schema.Field field = AvroSerdeUtils.isNullableType(fileSchema)?AvroSerdeUtils.getOtherTypeFromNullableType(fileSchema).getField(columnName):fileSchema.getField(columnName);
+      Schema.Field field =
+          AvroSerdeUtils.isNullableType(fileSchema) ? AvroSerdeUtils.getOtherTypeFromNullableType(fileSchema)
+              .getField(columnName) : fileSchema.getField(columnName);
       objectRow.add(worker(datum, field == null ? null : field.schema(), datumSchema, columnType));
     }
 
@@ -229,7 +230,7 @@ class AvroDeserializer {
   }
 
   private Object worker(Object datum, Schema fileSchema, Schema recordSchema, TypeInfo columnType)
-          throws AvroSerdeException {
+      throws AvroSerdeException {
     if (datum == null) {
       return null;
     }
@@ -244,7 +245,7 @@ class AvroDeserializer {
       fileSchema = AvroSerdeUtils.getOtherTypeFromNullableType(fileSchema);
     }
 
-    switch(columnType.getCategory()) {
+    switch (columnType.getCategory()) {
     case STRUCT:
       return deserializeStruct((GenericData.Record) datum, fileSchema, (StructTypeInfo) columnType);
     case UNION:
@@ -262,16 +263,16 @@ class AvroDeserializer {
 
   private Object deserializePrimitive(Object datum, Schema fileSchema, Schema recordSchema,
       PrimitiveTypeInfo columnType) throws AvroSerdeException {
-    switch (columnType.getPrimitiveCategory()){
+    switch (columnType.getPrimitiveCategory()) {
     case STRING:
       return datum.toString(); // To workaround AvroUTF8
-      // This also gets us around the Enum issue since we just take the value
-      // and convert it to a string. Yay!
+    // This also gets us around the Enum issue since we just take the value
+    // and convert it to a string. Yay!
     case BINARY:
-      if (recordSchema.getType() == Type.FIXED){
+      if (recordSchema.getType() == Type.FIXED) {
         Fixed fixed = (Fixed) datum;
         return fixed.bytes();
-      } else if (recordSchema.getType() == Type.BYTES){
+      } else if (recordSchema.getType() == Type.BYTES) {
         return AvroSerdeUtils.getBytesFromByteBuffer((ByteBuffer) datum);
       } else {
         throw new AvroSerdeException("Unexpected Avro schema for Binary TypeInfo: " + recordSchema.getType());
@@ -284,13 +285,13 @@ class AvroDeserializer {
       int scale = 0;
       try {
         scale = fileSchema.getJsonProp(AvroSerDe.AVRO_PROP_SCALE).asInt();
-      } catch(Exception ex) {
+      } catch (Exception ex) {
         throw new AvroSerdeException("Failed to obtain scale value from file schema: " + fileSchema, ex);
       }
 
       HiveDecimal dec = AvroSerdeUtils.getHiveDecimalFromByteBuffer((ByteBuffer) datum, scale);
-      JavaHiveDecimalObjectInspector oi = (JavaHiveDecimalObjectInspector)
-          PrimitiveObjectInspectorFactory.getPrimitiveJavaObjectInspector((DecimalTypeInfo)columnType);
+      JavaHiveDecimalObjectInspector oi = (JavaHiveDecimalObjectInspector) PrimitiveObjectInspectorFactory
+          .getPrimitiveJavaObjectInspector((DecimalTypeInfo) columnType);
       return oi.set(null, dec);
     case CHAR:
       if (fileSchema == null) {
@@ -301,7 +302,8 @@ class AvroDeserializer {
       try {
         maxLength = fileSchema.getJsonProp(AvroSerDe.AVRO_PROP_MAX_LENGTH).getValueAsInt();
       } catch (Exception ex) {
-        throw new AvroSerdeException("Failed to obtain maxLength value for char field from file schema: " + fileSchema, ex);
+        throw new AvroSerdeException("Failed to obtain maxLength value for char field from file schema: " + fileSchema,
+            ex);
       }
 
       String str = datum.toString();
@@ -316,7 +318,8 @@ class AvroDeserializer {
       try {
         maxLength = fileSchema.getJsonProp(AvroSerDe.AVRO_PROP_MAX_LENGTH).getValueAsInt();
       } catch (Exception ex) {
-        throw new AvroSerdeException("Failed to obtain maxLength value for varchar field from file schema: " + fileSchema, ex);
+        throw new AvroSerdeException(
+            "Failed to obtain maxLength value for varchar field from file schema: " + fileSchema, ex);
       }
 
       str = datum.toString();
@@ -327,12 +330,11 @@ class AvroDeserializer {
         throw new AvroSerdeException("Unexpected Avro schema for Date TypeInfo: " + recordSchema.getType());
       }
 
-      return new Date(DateWritable.daysToMillis((Integer)datum));
+      return new Date(DateWritable.daysToMillis((Integer) datum));
     }
     case TIMESTAMP: {
       if (recordSchema.getType() != Type.LONG) {
-        throw new AvroSerdeException(
-            "Unexpected Avro schema for Date TypeInfo: " + recordSchema.getType());
+        throw new AvroSerdeException("Unexpected Avro schema for Date TypeInfo: " + recordSchema.getType());
       }
       /*// If a time zone is found in file metadata (property name: writer.time.zone), convert the
       // timestamp to that (writer) time zone in order to emulate time zone agnostic behavior.
@@ -372,16 +374,15 @@ class AvroDeserializer {
         timestamp = Timestamp.ofEpochMilli(
             CalendarUtils.convertTimeToProleptic(timestamp.toEpochMilli()));
       }*/
-      return new Timestamp((Long)datum);
+      return new Timestamp((Long) datum);
     }
     default:
       return datum;
     }
   }
 
-
   private Object deserializeStruct(GenericData.Record datum, Schema fileSchema, StructTypeInfo columnType)
-          throws AvroSerdeException {
+      throws AvroSerdeException {
     // No equivalent Java type for the backing structure, need to recurse and build a list
     ArrayList<TypeInfo> innerFieldTypes = columnType.getAllStructFieldTypeInfos();
     ArrayList<String> innerFieldNames = columnType.getAllStructFieldNames();
@@ -390,35 +391,36 @@ class AvroDeserializer {
     return workerBase(innerObjectRow, fileSchema, innerFieldNames, innerFieldTypes, datum);
   }
 
-  private Object deserializeUnion(Object datum, Schema fileSchema, Schema recordSchema,
-                                  UnionTypeInfo columnType) throws AvroSerdeException {
+  private Object deserializeUnion(Object datum, Schema fileSchema, Schema recordSchema, UnionTypeInfo columnType)
+      throws AvroSerdeException {
     // Calculate tags individually since the schema can evolve and can have different tags. In worst case, both schemas are same
     // and we would end up doing calculations twice to get the same tag
     int fsTag = GenericData.get().resolveUnion(fileSchema, datum); // Determine index of value from fileSchema
     int rsTag = GenericData.get().resolveUnion(recordSchema, datum); // Determine index of value from recordSchema
-    Object desered = worker(datum, fileSchema == null ? null : fileSchema.getTypes().get(fsTag),
-        recordSchema.getTypes().get(rsTag), columnType.getAllUnionObjectTypeInfos().get(rsTag));
-    return new StandardUnionObjectInspector.StandardUnion((byte)rsTag, desered);
+    Object desered =
+        worker(datum, fileSchema == null ? null : fileSchema.getTypes().get(fsTag), recordSchema.getTypes().get(rsTag),
+            columnType.getAllUnionObjectTypeInfos().get(rsTag));
+    return new StandardUnionObjectInspector.StandardUnion((byte) rsTag, desered);
   }
 
-  private Object deserializeList(Object datum, Schema fileSchema, Schema recordSchema,
-                                 ListTypeInfo columnType) throws AvroSerdeException {
+  private Object deserializeList(Object datum, Schema fileSchema, Schema recordSchema, ListTypeInfo columnType)
+      throws AvroSerdeException {
     // Need to check the original schema to see if this is actually a Fixed.
-    if(recordSchema.getType().equals(Schema.Type.FIXED)) {
-    // We're faking out Hive to work through a type system impedence mismatch.
-    // Pull out the backing array and convert to a list.
+    if (recordSchema.getType().equals(Schema.Type.FIXED)) {
+      // We're faking out Hive to work through a type system impedence mismatch.
+      // Pull out the backing array and convert to a list.
       GenericData.Fixed fixed = (GenericData.Fixed) datum;
       List<Byte> asList = new ArrayList<Byte>(fixed.bytes().length);
-      for(int j = 0; j < fixed.bytes().length; j++) {
+      for (int j = 0; j < fixed.bytes().length; j++) {
         asList.add(fixed.bytes()[j]);
       }
       return asList;
-    } else if(recordSchema.getType().equals(Schema.Type.BYTES)) {
+    } else if (recordSchema.getType().equals(Schema.Type.BYTES)) {
       // This is going to be slow... hold on.
-      ByteBuffer bb = (ByteBuffer)datum;
+      ByteBuffer bb = (ByteBuffer) datum;
       List<Byte> asList = new ArrayList<Byte>(bb.capacity());
       byte[] array = bb.array();
-      for(int j = 0; j < array.length; j++) {
+      for (int j = 0; j < array.length; j++) {
         asList.add(array[j]);
       }
       return asList;
@@ -426,7 +428,7 @@ class AvroDeserializer {
       List listData = (List) datum;
       Schema listSchema = recordSchema.getElementType();
       List<Object> listContents = new ArrayList<Object>(listData.size());
-      for(Object obj : listData) {
+      for (Object obj : listData) {
         listContents.add(worker(obj, fileSchema == null ? null : fileSchema.getElementType(), listSchema,
             columnType.getListElementTypeInfo()));
       }
@@ -435,17 +437,17 @@ class AvroDeserializer {
   }
 
   private Object deserializeMap(Object datum, Schema fileSchema, Schema mapSchema, MapTypeInfo columnType)
-          throws AvroSerdeException {
+      throws AvroSerdeException {
     // Avro only allows maps with Strings for keys, so we only have to worry
     // about deserializing the values
     Map<String, Object> map = new HashMap<String, Object>();
-    Map<CharSequence, Object> mapDatum = (Map)datum;
+    Map<CharSequence, Object> mapDatum = (Map) datum;
     Schema valueSchema = mapSchema.getValueType();
     TypeInfo valueTypeInfo = columnType.getMapValueTypeInfo();
     for (CharSequence key : mapDatum.keySet()) {
       Object value = mapDatum.get(key);
-      map.put(key.toString(), worker(value, fileSchema == null ? null : fileSchema.getValueType(),
-          valueSchema, valueTypeInfo));
+      map.put(key.toString(),
+          worker(value, fileSchema == null ? null : fileSchema.getValueType(), valueSchema, valueTypeInfo));
     }
 
     return map;

@@ -69,7 +69,8 @@ import java.util.function.Predicate;
 /**
  * Hive Kafka storage handler to allow user to read and write from/to Kafka message bus.
  */
-@SuppressWarnings("ALL") public class KafkaStorageHandler /* extends DefaultHiveMetaHook */ implements HiveStorageHandler, HiveMetaHook {
+@SuppressWarnings("ALL") public class KafkaStorageHandler /* extends DefaultHiveMetaHook */
+    implements HiveStorageHandler, HiveMetaHook {
 
   private static final Logger LOG = LoggerFactory.getLogger(KafkaStorageHandler.class);
   private static final String KAFKA_STORAGE_HANDLER = "org.apache.hadoop.hive.kafka.KafkaStorageHandler";
@@ -103,22 +104,20 @@ import java.util.function.Predicate;
   private void configureCommonProperties(TableDesc tableDesc, Map<String, String> jobProperties) {
     String topic = tableDesc.getProperties().getProperty(KafkaTableProperties.HIVE_KAFKA_TOPIC.getName(), "");
     if (topic.isEmpty()) {
-      throw new IllegalArgumentException("Kafka topic missing set table property->"
-          + KafkaTableProperties.HIVE_KAFKA_TOPIC.getName());
+      throw new IllegalArgumentException(
+          "Kafka topic missing set table property->" + KafkaTableProperties.HIVE_KAFKA_TOPIC.getName());
     }
     jobProperties.put(KafkaTableProperties.HIVE_KAFKA_TOPIC.getName(), topic);
-    String
-        brokerString =
+    String brokerString =
         tableDesc.getProperties().getProperty(KafkaTableProperties.HIVE_KAFKA_BOOTSTRAP_SERVERS.getName(), "");
     if (brokerString.isEmpty()) {
-      throw new IllegalArgumentException("Broker address missing set table property->"
-          + KafkaTableProperties.HIVE_KAFKA_BOOTSTRAP_SERVERS.getName());
+      throw new IllegalArgumentException(
+          "Broker address missing set table property->" + KafkaTableProperties.HIVE_KAFKA_BOOTSTRAP_SERVERS.getName());
     }
     jobProperties.put(KafkaTableProperties.HIVE_KAFKA_BOOTSTRAP_SERVERS.getName(), brokerString);
-    Arrays.stream(KafkaTableProperties.values())
-        .filter(tableProperty -> !tableProperty.isMandatory())
-        .forEach(tableProperty -> jobProperties.put(tableProperty.getName(),
-            tableDesc.getProperties().getProperty(tableProperty.getName())));
+    Arrays.stream(KafkaTableProperties.values()).filter(tableProperty -> !tableProperty.isMandatory()).forEach(
+        tableProperty -> jobProperties
+            .put(tableProperty.getName(), tableDesc.getProperties().getProperty(tableProperty.getName())));
     // If the user ask for EOS then set the read to only committed.
     if (jobProperties.get(KafkaTableProperties.WRITE_SEMANTIC_PROPERTY.getName())
         .equals(KafkaOutputFormat.WriteSemantic.EXACTLY_ONCE.name())) {
@@ -162,40 +161,41 @@ import java.util.function.Predicate;
   @Override public String toString() {
     return KAFKA_STORAGE_HANDLER;
   }
-/*
-  @Override public StorageHandlerInfo getStorageHandlerInfo(Table table) throws MetaException {
-    String topic = table.getParameters().get(KafkaTableProperties.HIVE_KAFKA_TOPIC.getName());
-    if (topic == null || topic.isEmpty()) {
-      throw new MetaException("topic is null or empty");
+
+  /*
+    @Override public StorageHandlerInfo getStorageHandlerInfo(Table table) throws MetaException {
+      String topic = table.getParameters().get(KafkaTableProperties.HIVE_KAFKA_TOPIC.getName());
+      if (topic == null || topic.isEmpty()) {
+        throw new MetaException("topic is null or empty");
+      }
+      String brokers = table.getParameters().get(KafkaTableProperties.HIVE_KAFKA_BOOTSTRAP_SERVERS.getName());
+      if (brokers == null || brokers.isEmpty()) {
+        throw new MetaException("kafka brokers string is null or empty");
+      }
+      final Properties properties = new Properties();
+      properties.setProperty(ConsumerConfig.KEY_DESERIALIZER_CLASS_CONFIG, ByteArrayDeserializer.class.getName());
+      properties.setProperty(ConsumerConfig.VALUE_DESERIALIZER_CLASS_CONFIG, ByteArrayDeserializer.class.getName());
+      properties.setProperty(CommonClientConfigs.BOOTSTRAP_SERVERS_CONFIG, brokers);
+      properties.setProperty(CommonClientConfigs.CLIENT_ID_CONFIG, Utilities.getTaskId(getConf()));
+      if (UserGroupInformation.isSecurityEnabled()) {
+        KafkaUtils.addKerberosJaasConf(getConf(), properties);
+      }
+      table.getParameters()
+          .entrySet()
+          .stream()
+          .filter(objectObjectEntry -> objectObjectEntry.getKey()
+              .toLowerCase()
+              .startsWith(KafkaUtils.CONSUMER_CONFIGURATION_PREFIX))
+          .forEach(entry -> {
+            String key = entry.getKey().substring(KafkaUtils.CONSUMER_CONFIGURATION_PREFIX.length() + 1);
+            if (KafkaUtils.FORBIDDEN_PROPERTIES.contains(key)) {
+              throw new IllegalArgumentException("Not suppose to set Kafka Property " + key);
+            }
+            properties.put(key, entry.getValue());
+          });
+      return new KafkaStorageHandlerInfo(topic, properties);
     }
-    String brokers = table.getParameters().get(KafkaTableProperties.HIVE_KAFKA_BOOTSTRAP_SERVERS.getName());
-    if (brokers == null || brokers.isEmpty()) {
-      throw new MetaException("kafka brokers string is null or empty");
-    }
-    final Properties properties = new Properties();
-    properties.setProperty(ConsumerConfig.KEY_DESERIALIZER_CLASS_CONFIG, ByteArrayDeserializer.class.getName());
-    properties.setProperty(ConsumerConfig.VALUE_DESERIALIZER_CLASS_CONFIG, ByteArrayDeserializer.class.getName());
-    properties.setProperty(CommonClientConfigs.BOOTSTRAP_SERVERS_CONFIG, brokers);
-    properties.setProperty(CommonClientConfigs.CLIENT_ID_CONFIG, Utilities.getTaskId(getConf()));
-    if (UserGroupInformation.isSecurityEnabled()) {
-      KafkaUtils.addKerberosJaasConf(getConf(), properties);
-    }
-    table.getParameters()
-        .entrySet()
-        .stream()
-        .filter(objectObjectEntry -> objectObjectEntry.getKey()
-            .toLowerCase()
-            .startsWith(KafkaUtils.CONSUMER_CONFIGURATION_PREFIX))
-        .forEach(entry -> {
-          String key = entry.getKey().substring(KafkaUtils.CONSUMER_CONFIGURATION_PREFIX.length() + 1);
-          if (KafkaUtils.FORBIDDEN_PROPERTIES.contains(key)) {
-            throw new IllegalArgumentException("Not suppose to set Kafka Property " + key);
-          }
-          properties.put(key, entry.getValue());
-        });
-    return new KafkaStorageHandlerInfo(topic, properties);
-  }
-*/
+  */
   private Properties buildProducerProperties(Table table) {
     String brokers = table.getParameters().get(KafkaTableProperties.HIVE_KAFKA_BOOTSTRAP_SERVERS.getName());
     if (brokers == null || brokers.isEmpty()) {
@@ -208,19 +208,14 @@ import java.util.function.Predicate;
     if (UserGroupInformation.isSecurityEnabled()) {
       KafkaUtils.addKerberosJaasConf(getConf(), properties);
     }
-    table.getParameters()
-        .entrySet()
-        .stream()
-        .filter(objectObjectEntry -> objectObjectEntry.getKey()
-            .toLowerCase()
-            .startsWith(KafkaUtils.PRODUCER_CONFIGURATION_PREFIX))
-        .forEach(entry -> {
-          String key = entry.getKey().substring(KafkaUtils.PRODUCER_CONFIGURATION_PREFIX.length() + 1);
-          if (KafkaUtils.FORBIDDEN_PROPERTIES.contains(key)) {
-            throw new IllegalArgumentException("Not suppose to set Kafka Property " + key);
-          }
-          properties.put(key, entry.getValue());
-        });
+    table.getParameters().entrySet().stream().filter(objectObjectEntry -> objectObjectEntry.getKey().toLowerCase()
+        .startsWith(KafkaUtils.PRODUCER_CONFIGURATION_PREFIX)).forEach(entry -> {
+      String key = entry.getKey().substring(KafkaUtils.PRODUCER_CONFIGURATION_PREFIX.length() + 1);
+      if (KafkaUtils.FORBIDDEN_PROPERTIES.contains(key)) {
+        throw new IllegalArgumentException("Not suppose to set Kafka Property " + key);
+      }
+      properties.put(key, entry.getValue());
+    });
     return properties;
   }
 
@@ -236,11 +231,8 @@ import java.util.function.Predicate;
   }
 
   public void commitInsertTable(Table table, boolean overwrite) throws MetaException {
-    boolean
-        isExactlyOnce =
-        table.getParameters()
-            .get(KafkaTableProperties.WRITE_SEMANTIC_PROPERTY.getName())
-            .equals(KafkaOutputFormat.WriteSemantic.EXACTLY_ONCE.name());
+    boolean isExactlyOnce = table.getParameters().get(KafkaTableProperties.WRITE_SEMANTIC_PROPERTY.getName())
+        .equals(KafkaOutputFormat.WriteSemantic.EXACTLY_ONCE.name());
     String optimiticCommitVal = table.getParameters().get(KafkaTableProperties.HIVE_KAFKA_OPTIMISTIC_COMMIT.getName());
     boolean isTwoPhaseCommit = !Boolean.parseBoolean(optimiticCommitVal);
     if (!isExactlyOnce || !isTwoPhaseCommit) {
@@ -258,8 +250,7 @@ import java.util.function.Predicate;
     // 4 Clean workingDirectory.
 
     //First stage fetch the Transactions states
-    final RetryUtils.Task<Map<String, Pair<Long, Short>>>
-        fetchTransactionStates =
+    final RetryUtils.Task<Map<String, Pair<Long, Short>>> fetchTransactionStates =
         new RetryUtils.Task<Map<String, Pair<Long, Short>>>() {
           @Override public Map<String, Pair<Long, Short>> perform() throws Exception {
             return TransactionalKafkaWriter.getTransactionsState(FileSystem.get(getConf()), queryWorkingDir);
@@ -300,8 +291,8 @@ import java.util.function.Predicate;
         producersMap.clear();
       }
     };
-    final Predicate<Throwable>
-        isRetrayable = (error) -> !KafkaUtils.exceptionIsFatal(error) && !(error instanceof ProducerFencedException);
+    final Predicate<Throwable> isRetrayable =
+        (error) -> !KafkaUtils.exceptionIsFatal(error) && !(error instanceof ProducerFencedException);
     try {
       RetryUtils.retry(buildProducersTask, isRetrayable, cleanUpTheMap, maxTries, "Error while Builing Producers");
     } catch (Exception e) {
@@ -370,10 +361,8 @@ import java.util.function.Predicate;
     if (!table.getTableType().equals(TableType.EXTERNAL_TABLE.toString())) {
       throw new MetaException(KAFKA_STORAGE_HANDLER + " supports only " + TableType.EXTERNAL_TABLE);
     }
-    Arrays.stream(KafkaTableProperties.values())
-        .filter(KafkaTableProperties::isMandatory)
-        .forEach(key -> Preconditions.checkNotNull(table.getParameters().get(key.getName()),
-            "Set Table property " + key.getName()));
+    Arrays.stream(KafkaTableProperties.values()).filter(KafkaTableProperties::isMandatory).forEach(key -> Preconditions
+        .checkNotNull(table.getParameters().get(key.getName()), "Set Table property " + key.getName()));
     // Put all the default at the pre create.
     Arrays.stream(KafkaTableProperties.values()).forEach((key) -> {
       if (table.getParameters().get(key.getName()) == null) {

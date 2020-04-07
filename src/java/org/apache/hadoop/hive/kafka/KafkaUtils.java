@@ -81,14 +81,10 @@ final class KafkaUtils {
   /**
    * Set of Kafka properties that the user can not set via DDLs.
    */
-  static final Set<String>
-      FORBIDDEN_PROPERTIES =
-      new HashSet<>(ImmutableList.of(ConsumerConfig.ENABLE_AUTO_COMMIT_CONFIG,
-          ConsumerConfig.AUTO_OFFSET_RESET_CONFIG,
-          ConsumerConfig.KEY_DESERIALIZER_CLASS_CONFIG,
-          ConsumerConfig.VALUE_DESERIALIZER_CLASS_CONFIG,
-          ProducerConfig.TRANSACTIONAL_ID_CONFIG,
-          ProducerConfig.KEY_SERIALIZER_CLASS_CONFIG,
+  static final Set<String> FORBIDDEN_PROPERTIES = new HashSet<>(ImmutableList
+      .of(ConsumerConfig.ENABLE_AUTO_COMMIT_CONFIG, ConsumerConfig.AUTO_OFFSET_RESET_CONFIG,
+          ConsumerConfig.KEY_DESERIALIZER_CLASS_CONFIG, ConsumerConfig.VALUE_DESERIALIZER_CLASS_CONFIG,
+          ProducerConfig.TRANSACTIONAL_ID_CONFIG, ProducerConfig.KEY_SERIALIZER_CLASS_CONFIG,
           ProducerConfig.VALUE_SERIALIZER_CLASS_CONFIG));
 
   /**
@@ -105,8 +101,9 @@ final class KafkaUtils {
     props.setProperty(ConsumerConfig.AUTO_OFFSET_RESET_CONFIG, "none");
     String brokerEndPoint = configuration.get(KafkaTableProperties.HIVE_KAFKA_BOOTSTRAP_SERVERS.getName());
     if (brokerEndPoint == null || brokerEndPoint.isEmpty()) {
-      throw new IllegalArgumentException("Kafka Broker End Point is missing Please set Config "
-          + KafkaTableProperties.HIVE_KAFKA_BOOTSTRAP_SERVERS.getName());
+      throw new IllegalArgumentException(
+          "Kafka Broker End Point is missing Please set Config " + KafkaTableProperties.HIVE_KAFKA_BOOTSTRAP_SERVERS
+              .getName());
     }
     props.setProperty(CommonClientConfigs.BOOTSTRAP_SERVERS_CONFIG, brokerEndPoint);
     props.setProperty(ConsumerConfig.KEY_DESERIALIZER_CLASS_CONFIG, ByteArrayDeserializer.class.getName());
@@ -139,8 +136,9 @@ final class KafkaUtils {
     final Properties properties = new Properties();
     String brokerEndPoint = configuration.get(KafkaTableProperties.HIVE_KAFKA_BOOTSTRAP_SERVERS.getName());
     if (brokerEndPoint == null || brokerEndPoint.isEmpty()) {
-      throw new IllegalArgumentException("Kafka Broker End Point is missing Please set Config "
-          + KafkaTableProperties.HIVE_KAFKA_BOOTSTRAP_SERVERS.getName());
+      throw new IllegalArgumentException(
+          "Kafka Broker End Point is missing Please set Config " + KafkaTableProperties.HIVE_KAFKA_BOOTSTRAP_SERVERS
+              .getName());
     }
     properties.setProperty(CommonClientConfigs.BOOTSTRAP_SERVERS_CONFIG, brokerEndPoint);
     //case Kerberos is On
@@ -177,13 +175,13 @@ final class KafkaUtils {
     return properties;
   }
 
-    public static String jarFinderGetJar(Class klass) {
+  public static String jarFinderGetJar(Class klass) {
     Preconditions.checkNotNull(klass, "klass");
     ClassLoader loader = klass.getClassLoader();
     if (loader != null) {
       String class_file = klass.getName().replaceAll("\\.", "/") + ".class";
       try {
-        for (java.util.Enumeration itr = loader.getResources(class_file); itr.hasMoreElements();) {
+        for (java.util.Enumeration itr = loader.getResources(class_file); itr.hasMoreElements(); ) {
           java.net.URL url = (java.net.URL) itr.nextElement();
           String path = url.getPath();
           if (path.startsWith("file:")) {
@@ -207,24 +205,20 @@ final class KafkaUtils {
     Set<String> jars = new HashSet<>();
     FileSystem localFs = FileSystem.getLocal(conf);
     jars.addAll(conf.getStringCollection("tmpjars"));
-    jars.addAll(Arrays.stream(classes)
-        .filter(Objects::nonNull)
-        .map(clazz -> {
-          String path = jarFinderGetJar(clazz);
-          if (path == null) {
-            throw new RuntimeException("Could not find jar for class "
-                + clazz
-                + " in order to ship it to the cluster.");
-          }
-          try {
-            if (!localFs.exists(new Path(path))) {
-              throw new RuntimeException("Could not validate jar file " + path + " for class " + clazz);
-            }
-          } catch (IOException e) {
-            throw new RuntimeException(e);
-          }
-          return path;
-        }).collect(Collectors.toList()));
+    jars.addAll(Arrays.stream(classes).filter(Objects::nonNull).map(clazz -> {
+      String path = jarFinderGetJar(clazz);
+      if (path == null) {
+        throw new RuntimeException("Could not find jar for class " + clazz + " in order to ship it to the cluster.");
+      }
+      try {
+        if (!localFs.exists(new Path(path))) {
+          throw new RuntimeException("Could not validate jar file " + path + " for class " + clazz);
+        }
+      } catch (IOException e) {
+        throw new RuntimeException(e);
+      }
+      return path;
+    }).collect(Collectors.toList()));
 
     if (jars.isEmpty()) {
       return;
@@ -245,11 +239,8 @@ final class KafkaUtils {
   }
 
   static ProducerRecord<byte[], byte[]> toProducerRecord(String topic, KafkaWritable value) {
-    return new ProducerRecord<>(topic,
-        value.getPartition() != -1 ? value.getPartition() : null,
-        value.getTimestamp() != -1L ? value.getTimestamp() : null,
-        value.getRecordKey(),
-        value.getValue());
+    return new ProducerRecord<>(topic, value.getPartition() != -1 ? value.getPartition() : null,
+        value.getTimestamp() != -1L ? value.getTimestamp() : null, value.getRecordKey(), value.getValue());
   }
 
   /**
@@ -258,18 +249,13 @@ final class KafkaUtils {
    * @return true if the exception is fatal thus we only can abort and rethrow the cause.
    */
   static boolean exceptionIsFatal(final Throwable exception) {
-    final boolean
-        securityException =
-        exception instanceof AuthenticationException
-            || exception instanceof AuthorizationException
+    final boolean securityException =
+        exception instanceof AuthenticationException || exception instanceof AuthorizationException
             || exception instanceof SecurityDisabledException;
 
-    final boolean
-        communicationException =
-        exception instanceof InvalidTopicException
-            || exception instanceof UnknownServerException
-            || exception instanceof SerializationException
-            || exception instanceof OffsetMetadataTooLarge
+    final boolean communicationException =
+        exception instanceof InvalidTopicException || exception instanceof UnknownServerException
+            || exception instanceof SerializationException || exception instanceof OffsetMetadataTooLarge
             || exception instanceof IllegalStateException;
 
     return securityException || communicationException;
@@ -323,6 +309,5 @@ final class KafkaUtils {
     props.setProperty("sasl.jaas.config", jaasConf);
     log.info("Kafka client running with following JAAS = [{}]", jaasConf);
   }
-
 
 }

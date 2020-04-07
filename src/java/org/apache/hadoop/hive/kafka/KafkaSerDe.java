@@ -102,32 +102,25 @@ import java.util.HashMap;
   @Override public void initialize(@Nullable Configuration conf, Properties tbl) throws SerDeException {
     //This method is called before {@link org.apache.hadoop.hive.kafka.KafkaStorageHandler.preCreateTable}
     //Thus we need to default to org.apache.hadoop.hive.kafka.KafkaUtils.DEFAULT_PROPERTIES if any property is needed
-    final String
-        className =
-        tbl.getProperty(KafkaTableProperties.SERDE_CLASS_NAME.getName(),
-            KafkaTableProperties.SERDE_CLASS_NAME.getDefaultValue());
+    final String className = tbl.getProperty(KafkaTableProperties.SERDE_CLASS_NAME.getName(),
+        KafkaTableProperties.SERDE_CLASS_NAME.getDefaultValue());
     delegateSerDe = KafkaUtils.createDelegate(className);
     //noinspection deprecation
     delegateSerDe.initialize(conf, tbl);
 
     if (!(delegateSerDe.getObjectInspector() instanceof StructObjectInspector)) {
-      throw new SerDeException("Was expecting Struct Object Inspector but have " + delegateSerDe.getObjectInspector()
-          .getClass()
-          .getName());
+      throw new SerDeException(
+          "Was expecting Struct Object Inspector but have " + delegateSerDe.getObjectInspector().getClass().getName());
     }
     delegateDeserializerOI = (StructObjectInspector) delegateSerDe.getObjectInspector();
 
     // Build column names Order matters here
-    columnNames.addAll(delegateDeserializerOI.getAllStructFieldRefs()
-        .stream()
-        .map(StructField::getFieldName)
+    columnNames.addAll(delegateDeserializerOI.getAllStructFieldRefs().stream().map(StructField::getFieldName)
         .collect(Collectors.toList()));
     columnNames.addAll(MetadataColumn.KAFKA_METADATA_COLUMN_NAMES);
 
     final List<ObjectInspector> inspectors = new ArrayList<>(columnNames.size());
-    inspectors.addAll(delegateDeserializerOI.getAllStructFieldRefs()
-        .stream()
-        .map(StructField::getFieldObjectInspector)
+    inspectors.addAll(delegateDeserializerOI.getAllStructFieldRefs().stream().map(StructField::getFieldObjectInspector)
         .collect(Collectors.toList()));
     inspectors.addAll(MetadataColumn.KAFKA_METADATA_INSPECTORS);
     objectInspector = ObjectInspectorFactory.getStandardStructObjectInspector(columnNames, inspectors);
@@ -137,23 +130,26 @@ import java.util.HashMap;
       bytesConverter = new TextBytesConverter();
     } else if (delegateSerDe.getSerializedClass() == AvroGenericRecordWritable.class) {
       String schemaFromProperty = tbl.getProperty(AvroSerdeUtils2.AvroTableProperties.SCHEMA_LITERAL.getPropName(), "");
-      if(schemaFromProperty.isEmpty()) {
+      if (schemaFromProperty.isEmpty()) {
         try {
-	  Map<String, String> map = new HashMap<>();
+          Map<String, String> map = new HashMap<>();
           for (final String name : tbl.stringPropertyNames()) {
             map.put(name, tbl.getProperty(name));
           }
-          CachedSchemaRegistryClient schemaRegistry = new CachedSchemaRegistryClient(
-            tbl.getProperty("schema.registry.url"), 100, map);
-          Schema schema = schemaRegistry.getBySubjectAndId(tbl.getProperty("schema.subject"), Integer.parseInt(tbl.getProperty("schema.id")));
+          CachedSchemaRegistryClient schemaRegistry =
+              new CachedSchemaRegistryClient(tbl.getProperty("schema.registry.url"), 100, map);
+          Schema schema = schemaRegistry
+              .getBySubjectAndId(tbl.getProperty("schema.subject"), Integer.parseInt(tbl.getProperty("schema.id")));
           bytesConverter = getByteConverterForAvroDelegate(schema, tbl);
-	} catch(RestClientException | IOException e) { throw new SerDeException("problem with schema registry"); }
+        } catch (RestClientException | IOException e) {
+          throw new SerDeException("problem with schema registry");
+        }
       } else {
-         //Preconditions.checkArgument(!schemaFromProperty.isEmpty(), "Avro Schema is empty Can not go further");
-         Schema schema = AvroSerdeUtils2.getSchemaFor(schemaFromProperty);
-         LOG.debug("Building Avro Reader with schema {}", schemaFromProperty);
-         //bytesConverter = new AvroBytesConverter(schema);
-         bytesConverter = getByteConverterForAvroDelegate(schema, tbl);
+        //Preconditions.checkArgument(!schemaFromProperty.isEmpty(), "Avro Schema is empty Can not go further");
+        Schema schema = AvroSerdeUtils2.getSchemaFor(schemaFromProperty);
+        LOG.debug("Building Avro Reader with schema {}", schemaFromProperty);
+        //bytesConverter = new AvroBytesConverter(schema);
+        bytesConverter = getByteConverterForAvroDelegate(schema, tbl);
       }
     } else {
       bytesConverter = new BytesWritableConverter();
@@ -161,13 +157,12 @@ import java.util.HashMap;
   }
 
   enum BytesConverterType {
-    SKIP,
-    NONE;
+    SKIP, NONE;
 
     static BytesConverterType fromString(String value) {
       try {
         return BytesConverterType.valueOf(value.trim().toUpperCase());
-      } catch (Exception e){
+      } catch (Exception e) {
         return NONE;
       }
     }
@@ -175,8 +170,8 @@ import java.util.HashMap;
 
   BytesConverter getByteConverterForAvroDelegate(Schema schema, Properties tbl) throws SerDeException {
     String avroBytesConverterPropertyName = AvroSerdeUtils2.AvroTableProperties.AVRO_SERDE_TYPE.getPropName();
-    String avroBytesConverterProperty = tbl.getProperty(avroBytesConverterPropertyName,
-        BytesConverterType.NONE.toString());
+    String avroBytesConverterProperty =
+        tbl.getProperty(avroBytesConverterPropertyName, BytesConverterType.NONE.toString());
     BytesConverterType avroByteConverterType = BytesConverterType.fromString(avroBytesConverterProperty);
     switch (avroByteConverterType) {
     case SKIP:
@@ -189,8 +184,10 @@ import java.util.HashMap;
         throw new SerDeException(message, e);
       }
       return new AvroSkipBytesConverter(schema, avroSkipBytes);
-    case NONE: return new AvroBytesConverter(schema);
-    default: throw new SerDeException("Value of " + avroBytesConverterPropertyName + " was invalid.");
+    case NONE:
+      return new AvroBytesConverter(schema);
+    default:
+      throw new SerDeException("Value of " + avroBytesConverterPropertyName + " was invalid.");
     }
   }
 
@@ -201,10 +198,9 @@ import java.util.HashMap;
   @Override public Writable serialize(Object obj, ObjectInspector objInspector) throws SerDeException {
 
     if (!(objInspector instanceof StructObjectInspector)) {
-      throw new SerDeException("Object inspector has to be "
-          + StructObjectInspector.class.getName()
-          + " but got "
-          + objInspector.getClass().getName());
+      throw new SerDeException(
+          "Object inspector has to be " + StructObjectInspector.class.getName() + " but got " + objInspector.getClass()
+              .getName());
     }
     StructObjectInspector structObjectInspector = (StructObjectInspector) objInspector;
     List<Object> data = structObjectInspector.getStructFieldsDataAsList(obj);
@@ -226,34 +222,21 @@ import java.util.HashMap;
       throw new SerDeException("Can not insert values into `__offset` column, has to be [-1]");
     }
 
-    final byte[]
-        keyBytes =
+    final byte[] keyBytes =
         key == null ? null : PrimitiveObjectInspectorFactory.writableBinaryObjectInspector.getPrimitiveJavaObject(key);
-    final long
-        recordTs =
-        timestamp == null ?
-            -1 :
-            PrimitiveObjectInspectorUtils.getLong(timestamp, MetadataColumn.TIMESTAMP.getObjectInspector());
-    final int
-        recordPartition =
-        partition == null ?
-            -1 :
-            PrimitiveObjectInspectorUtils.getInt(partition, MetadataColumn.PARTITION.getObjectInspector());
+    final long recordTs = timestamp == null ? -1 : PrimitiveObjectInspectorUtils
+        .getLong(timestamp, MetadataColumn.TIMESTAMP.getObjectInspector());
+    final int recordPartition = partition == null ? -1 : PrimitiveObjectInspectorUtils
+        .getInt(partition, MetadataColumn.PARTITION.getObjectInspector());
 
     Writable w = delegateSerDe.serialize(row, delegateSerializerOI);
 
-    if(w instanceof BytesWritable) {
-	    return new KafkaWritable(recordPartition,
-			    recordTs,
-			    ((BytesWritable)w).getBytes(),
-			    keyBytes);
+    if (w instanceof BytesWritable) {
+      return new KafkaWritable(recordPartition, recordTs, ((BytesWritable) w).getBytes(), keyBytes);
     }
 
     //noinspection unchecked
-    return new KafkaWritable(recordPartition,
-        recordTs,
-        bytesConverter.getBytes(w),
-        keyBytes);
+    return new KafkaWritable(recordPartition, recordTs, bytesConverter.getBytes(w), keyBytes);
   }
 
   @Override public SerDeStats getSerDeStats() {
@@ -324,10 +307,7 @@ import java.util.HashMap;
      * @param fieldName fieldName to be looked up.
      */
     @SuppressWarnings("OptionalGetWithoutIsPresent") @Override public StructField getStructFieldRef(String fieldName) {
-      return this.getAllStructFieldRefs()
-          .stream()
-          .filter(ref -> ref.getFieldName().equals(fieldName))
-          .findFirst()
+      return this.getAllStructFieldRefs().stream().filter(ref -> ref.getFieldName().equals(fieldName)).findFirst()
           .get();
     }
 
@@ -440,11 +420,11 @@ import java.util.HashMap;
   }
 
   /**
-     * Avro converter which skips the first @skipBytes of each message.
-     *
-     * This may be needed for various serializers, such as the Confluent Avro serializer, which uses the first five
-     * bytes to indicate a magic byte, as well as a four byte schema ID.
-     */
+   * Avro converter which skips the first @skipBytes of each message.
+   *
+   * This may be needed for various serializers, such as the Confluent Avro serializer, which uses the first five
+   * bytes to indicate a magic byte, as well as a four byte schema ID.
+   */
   static class AvroSkipBytesConverter extends AvroBytesConverter {
     private final int skipBytes;
 
@@ -453,8 +433,7 @@ import java.util.HashMap;
       this.skipBytes = skipBytes;
     }
 
-    @Override
-    Decoder getDecoder(byte[] value) throws SerDeException {
+    @Override Decoder getDecoder(byte[] value) throws SerDeException {
       try {
         return DecoderFactory.get().binaryDecoder(value, this.skipBytes, value.length - this.skipBytes, null);
       } catch (ArrayIndexOutOfBoundsException e) {
