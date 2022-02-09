@@ -28,7 +28,7 @@
         <kafka.version>2.3.0</kafka.version>
         <maven.shade.plugin.version>3.2.0</maven.shade.plugin.version>
         <hive.version>1.2.1</hive.version>
-        <hadoop.version>2.7.3</hadoop.version>
+        <hadoop.version>2.10.1</hadoop.version>
         <maven.jar.plugin.version>2.4</maven.jar.plugin.version>
     </properties>
     <artifactId>kafka-handler-backport</artifactId>
